@@ -75,6 +75,11 @@ class JsonStore:
         with self._lock:
             return copy.deepcopy(self._load()["sales"])
 
+    def get_product(self, sku: str) -> dict[str, Any] | None:
+        with self._lock:
+            found = self._find_product(self._load()["products"], sku)
+            return copy.deepcopy(found) if found is not None else None
+
     def add_product(self, payload: dict[str, Any]) -> dict[str, Any]:
         """Crée ou met à jour par SKU (insensible à la casse)."""
         sku = str(payload.get("sku") or "").strip()
@@ -230,7 +235,7 @@ def get_store() -> JsonStore:
     return _store
 
 
-def set_store(store: JsonStore) -> None:
+def set_store(store: JsonStore | None) -> None:
     """Injection utilisée par les tests."""
     global _store
     _store = store
