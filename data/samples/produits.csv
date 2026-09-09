@@ -1,0 +1,6 @@
+sku,name,category,unit_cost,unit_price,stock_quantity,low_stock_threshold
+HUILE-1L,Huile végétale 1L,Épicerie,1000,1500,4,5
+RIZ-5KG,Riz 5kg,Épicerie,2200,3000,18,6
+SAVON,Savon de ménage,Hygiène,200,400,3,8
+EAU-15L,Eau 1.5L,Boissons,180,300,40,10
+PAIN,Pain,Boulangerie,150,250,12,6
