@@ -141,7 +141,8 @@ class JsonStore:
                 continue
             self.add_sale(sale)
             stats["sales_ingested"] += 1
-        self.record_source(source)
+        if stats["products_ingested"] or stats["sales_ingested"]:
+            self.record_source(source)
         return stats
 
     def has_equivalent_sale(self, payload: dict[str, Any]) -> bool:

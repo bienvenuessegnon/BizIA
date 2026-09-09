@@ -148,7 +148,7 @@ def test_extend_skips_unknown_and_duplicate_sales(tmp_path: Path) -> None:
     assert second["sales_ingested"] == 0
     assert second["sales_skipped_duplicate"] == 1
     assert len(store.list_sales()) == 1
-    assert store.last_source() == "excel"
+    assert store.last_source() == "csv"
 
 
 def test_save_and_get_last_analysis(tmp_path: Path) -> None:
