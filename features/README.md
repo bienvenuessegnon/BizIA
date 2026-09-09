@@ -1,5 +1,16 @@
 # Features
 
-Chaque sous-dossier est une capacité métier autonome. Prendre un dossier, lire son README, puis implémenter dans ce périmètre.
+Périmètre métier de chaque capacité. L’implémentation se fait dans `frontend/` et/ou `backend/`.
 
-Aucune application front ou back n’est posée à ce stade : uniquement le découpage et les responsabilités.
+| Feature | Front | Back |
+| --- | --- | --- |
+| `ingestion` | dépôt de fichiers | parsing CSV / Excel / PDF |
+| `structuration` | aperçu qualité | nettoyage, types, doublons |
+| `analyse` | KPI, insights | analyses auto |
+| `anomalies` | alertes | détection + explication |
+| `tendances` | courbes | séries temporelles |
+| `predictions` | prévisions | modèles ML |
+| `decisions` | recommandations | scoring, impact |
+| `chatbot` | UI chat | LLM / RAG |
+| `visualisations` | graphiques | données agrégées |
+| `rapports` | export / lecture | génération du livrable |

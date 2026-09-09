@@ -5,7 +5,7 @@
 ## Périmètre
 
 - Composition d’un livrable (texte + chiffres + éventuelles visualisations).
-- Export / génération d’un rapport final.
+- Export / génération d’un rapport final (`backend/` + lecture `frontend/`).
 
 ## Hors périmètre
 

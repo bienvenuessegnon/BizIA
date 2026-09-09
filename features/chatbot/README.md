@@ -4,7 +4,7 @@
 
 ## Périmètre
 
-- Interface conversationnelle (contrat et logique, pas d’app front imposée ici).
+- Interface conversationnelle (`frontend/app/chat`).
 - Orchestration des questions vers les autres features.
 - Synthèse de réponses ancrées dans les données.
 

@@ -4,33 +4,22 @@ BizIA est l’intelligence décisionnelle des PME.
 
 ## Problème
 
-Les PME accumulent des données opérationnelles (ventes, stocks, dépenses, clients, fournisseurs, trésorerie) dans des fichiers et des documents. Ces données sont :
-
-- dispersées ;
-- difficiles à relier ;
-- rarement transformées en décisions.
+Les entreprises accumulent des données (ventes, stocks, dépenses, clients, fournisseurs, trésorerie, documents) qui restent dispersées et sous-exploitées. Le manque n’est pas la donnée : c’est le **fossé entre les données et la décision**.
 
 ## Promesse
 
-L’utilisateur importe ses fichiers. BizIA les comprend, les analyse et produit de l’intelligence actionnable :
+De la donnée brute (Excel, CSV, PDF, documents) à une décision.
 
-1. **Ce qui se passe** — compréhension et structuration.
-2. **Ce qui risque d’arriver** — tendances, anomalies, prédictions.
-3. **Ce qu’il faut faire et pourquoi** — décisions et rapports.
+Chaîne : compréhension → analyse → détection → prédiction → recommandation → décision.
 
-## Capacités cibles
+Question centrale : *Maintenant que je sais ce qui se passe, qu’est-ce que je dois faire ?*
 
-- Import de PDF, Excel, CSV et documents.
-- Nettoyage et structuration assistés par l’IA.
-- Détection d’anomalies.
-- Identification de tendances.
-- Anticipation d’évolutions (machine learning / analyse).
-- Visualisations.
-- Rapports exploitables.
-- Chatbot pour questionner, approfondir et générer un rapport final.
+## Approche AI-first
 
-## Positionnement
+L’IA n’est pas un chatbot collé à un dashboard. Elle intervient sur toute la chaîne. Le chat est la porte d’entrée vers le moteur d’intelligence décisionnelle.
 
-BizIA ne se limite pas à afficher des chiffres. Il aide à décider.
+## Ambition
 
-> BizIA : les données deviennent des décisions.
+Rendre l’analyse avancée accessible sans équipe data. À terme : copilote décisionnel pour PME (surveillance continue, risques, opportunités, prochaines actions).
+
+> Your data. Your intelligence. Your next decision.

@@ -6,6 +6,7 @@
 
 - Choix de représentations adaptées aux séries et indicateurs.
 - Production d’artefacts visuels réutilisables dans rapports et chatbot.
+- Rendu principalement dans `frontend/` ; données agrégées via `backend/`.
 
 ## Hors périmètre
 

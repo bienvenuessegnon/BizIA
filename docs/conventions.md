@@ -1,37 +1,35 @@
 # Conventions de contribution
 
-## Principe
+## Répartition
 
-Une feature = un dossier sous `features/`.  
-Chacun implémente **sa** feature dans ce dossier. On n’organise pas le dépôt en applications `frontend/` / `backend/`.
+| Dossier | Responsable | Contenu |
+| --- | --- | --- |
+| `frontend/` | Frontend | Next.js, dashboard, chat, visualisations |
+| `backend/` | Backend, data, ML, IA | FastAPI, ingestion, analyse, LLM |
+| `features/` | Tous | Périmètre métier (quoi, pas comment) |
+| `shared/contrats/` | Tous | Contrats d’API et schémas d’échange |
+| `docs/` | Tous | Vision et règles d’équipe |
 
-## Où mettre le code
+Le frontend et le backend s’implémentent **chacun dans son dossier**. Les README sous `features/` décrivent le besoin ; ils ne remplacent pas le code.
 
-| Emplacement | Contenu |
-| --- | --- |
-| `features/<nom>/` | Tout le travail de la feature (logique, tests, notes, artefacts de la feature) |
-| `shared/` | Uniquement ce qui est réellement partagé entre plusieurs features (contrats, types, règles) |
-| `docs/` | Documentation produit et règles d’équipe |
+## Démarrer
 
-Ne pas ajouter de skeleton front ou back à la racine. Quand une feature aura besoin d’une API ou d’écrans, cela se fera **dans** le dossier de la feature, ou via un contrat décrit dans `shared/`.
+1. Frontend : lire [`frontend/README.md`](../frontend/README.md).
+2. Backend : lire [`backend/README.md`](../backend/README.md).
+3. Pour une capacité métier, lire `features/<nom>/README.md` puis coder dans `frontend/` et/ou `backend/` selon la couche.
 
-## Démarrer une feature
+## Contrats
 
-1. Lire `features/<nom>/README.md` (périmètre et hors-périmètre).
-2. Travailler uniquement dans ce dossier, plus `shared/` si un contrat commun est nécessaire.
-3. Documenter dans le README de la feature les choix qui impactent les autres (formats d’entrée / sortie).
+Les échanges front ↔ back passent par des contrats décrits dans `shared/contrats/` (et les routes REST du backend). Éviter les couplages implicites.
 
-## Contrats entre features
-
-Les échanges passent par des **contrats** (fichiers de description dans `shared/contrats/` quand ils existent), pas par des imports croisés entre features.
-
-Flux cible (ordre logique, pas d’implémentation imposée) :
+Flux métier :
 
 ```
-ingestion → structuration → (anomalies | tendances | predictions)
+ingestion → structuration → analyse
+                         → anomalies | tendances | predictions
                          → visualisations | rapports | chatbot | decisions
 ```
 
 ## Branches
 
-Une branche par feature, nommée de façon explicite, par exemple `feat/ingestion`.
+Une branche par sujet, par exemple `feat/frontend-dashboard` ou `feat/backend-ingestion`.

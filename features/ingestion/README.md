@@ -4,7 +4,7 @@
 
 ## Périmètre
 
-- Réception des fichiers.
+- Réception des fichiers (UI frontend + API backend).
 - Identification du type (PDF, tableur, CSV, document).
 - Extraction de texte / tableaux bruts.
 - Traçabilité de la source (nom, date d’import).

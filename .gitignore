@@ -13,7 +13,7 @@ Thumbs.db
 .env.*
 !.env.example
 
-# Dépendances & caches (à affiner par feature)
+# Dépendances & caches
 node_modules/
 __pycache__/
 *.pyc
@@ -23,6 +23,9 @@ dist/
 build/
 .cache/
 coverage/
+frontend/.next/
+frontend/out/
+*.egg-info/
 
 # Données locales (imports utilisateurs, extraits)
 data/local/
