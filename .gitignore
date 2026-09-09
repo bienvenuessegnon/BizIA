@@ -1,0 +1,33 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Env & secrets
+.env
+.env.*
+!.env.example
+
+# Dépendances & caches (à affiner par feature)
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+dist/
+build/
+.cache/
+coverage/
+
+# Données locales (imports utilisateurs, extraits)
+data/local/
+*.xlsx
+*.xls
+*.csv
+*.pdf
+!docs/**/*.pdf
