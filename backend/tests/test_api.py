@@ -127,3 +127,94 @@ def test_import_feeds_same_store(client: TestClient) -> None:
     )
     assert rejected.status_code == 415
     assert rejected.json()["error"]["code"] == "unsupported_type"
+
+
+def test_empty_analysis_contract(client: TestClient) -> None:
+    summary = client.get("/api/analysis/summary")
+    assert summary.status_code == 200
+    assert summary.json() == {"result": None}
+
+    alerts = client.get("/api/alerts")
+    assert alerts.status_code == 200
+    assert alerts.json() == {"items": []}
+
+    ran = client.post("/api/analysis/run")
+    assert ran.status_code == 200
+    body = ran.json()["result"]
+    assert body["kpis"]["sales_count"] == 0
+    assert "forecast" not in body
+    assert [alert["code"] for alert in body["alerts"]] == ["no_data"]
+    assert client.get("/api/alerts").json()["items"][0]["code"] == "no_data"
+
+
+def test_analysis_on_sample_import(client: TestClient) -> None:
+    from app.utils.settings import REPO_ROOT
+
+    samples = REPO_ROOT / "data" / "samples"
+    client.post(
+        "/api/ingestion/files",
+        files={"file": ("produits.csv", samples.joinpath("produits.csv").read_bytes(), "text/csv")},
+    )
+    client.post(
+        "/api/ingestion/files",
+        files={"file": ("ventes.csv", samples.joinpath("ventes.csv").read_bytes(), "text/csv")},
+    )
+
+    ran = client.post("/api/analysis/run")
+    result = ran.json()["result"]
+    assert result["kpis"]["revenue"] == 57700.0
+    assert result["kpis"]["sales_count"] == 16
+    assert result["top_profit"][0]["sku"] == "RIZ-5KG"
+    assert {item["sku"] for item in result["low_stock"]} == {"SAVON", "HUILE-1L"}
+
+    summary = client.get("/api/analysis/summary")
+    assert summary.json()["result"]["kpis"] == result["kpis"]
+    assert len(client.get("/api/alerts").json()["items"]) == len(result["alerts"])
+
+    forecasted = client.post("/api/analysis/run?include_forecast=true")
+    assert "forecast" in forecasted.json()["result"]
+
+
+def test_chat_requires_analysis_then_answers(client: TestClient) -> None:
+    from app.utils.settings import REPO_ROOT
+
+    samples = REPO_ROOT / "data" / "samples"
+    ungrounded = client.post(
+        "/api/chat/messages",
+        json={"message": "Quel produit me rapporte le plus ?"},
+    )
+    assert ungrounded.status_code == 200
+    assert ungrounded.json()["grounded"] is False
+    assert ungrounded.json()["reply"]
+
+    client.post(
+        "/api/ingestion/files",
+        files={"file": ("produits.csv", samples.joinpath("produits.csv").read_bytes(), "text/csv")},
+    )
+    client.post(
+        "/api/ingestion/files",
+        files={"file": ("ventes.csv", samples.joinpath("ventes.csv").read_bytes(), "text/csv")},
+    )
+    client.post("/api/analysis/run")
+
+    best = client.post(
+        "/api/chat/messages",
+        json={"message": "Quel produit me rapporte le plus ?"},
+    )
+    assert best.status_code == 200
+    body = best.json()
+    assert body["grounded"] is True
+    assert "RIZ" in body["reply"].upper() or "Riz" in body["reply"]
+    assert "status" not in body
+
+    report = client.post("/api/reports/generate")
+    assert report.status_code == 200
+    payload = report.json()
+    assert payload["status"] == "ok"
+    assert payload["report"]["kpis"]["sales_count"] == 16
+
+
+def test_report_without_analysis(client: TestClient) -> None:
+    response = client.post("/api/reports/generate")
+    assert response.status_code == 400
+    assert response.json()["error"]["code"] == "no_analysis"
