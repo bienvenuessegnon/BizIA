@@ -29,13 +29,12 @@ async def upload_file(file: UploadFile = File(...)) -> dict:
         saved.unlink(missing_ok=True)
         raise ApiError(exc.status_code, exc.code, exc.message) from exc
 
-    get_store().extend_dataset(products, sales)
     suffix = Path(filename).suffix.lower()
     source = "excel" if suffix in {".xlsx", ".xls"} else "csv"
+    stats = get_store().extend_dataset(products, sales, source=source)
     return {
         "status": "accepted",
         "filename": filename,
         "source": source,
-        "products_ingested": len(products),
-        "sales_ingested": len(sales),
+        **stats,
     }

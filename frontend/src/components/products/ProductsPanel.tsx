@@ -115,7 +115,7 @@ export function ProductsPanel() {
             <Input
               name="unit_cost"
               type="number"
-              label="Coût unitaire (€)"
+              label="Coût unitaire (FCFA)"
               min={0}
               value={form.unit_cost || ""}
               onChange={(e) => setForm((f) => ({ ...f, unit_cost: Number(e.target.value) }))}
@@ -123,7 +123,7 @@ export function ProductsPanel() {
             <Input
               name="unit_price"
               type="number"
-              label="Prix de vente (€)"
+              label="Prix de vente (FCFA)"
               min={0}
               value={form.unit_price || ""}
               onChange={(e) => setForm((f) => ({ ...f, unit_price: Number(e.target.value) }))}
@@ -163,7 +163,7 @@ export function ProductsPanel() {
           ) : items.length === 0 ? (
             <EmptyState
               title="Aucun produit"
-              description="Ajoutez votre premier produit ou importez un document (Excel, CSV, PDF, Word, PowerPoint)."
+              description="Ajoutez votre premier produit ou importez un CSV / Excel."
             />
           ) : (
             <div className="table-wrap">

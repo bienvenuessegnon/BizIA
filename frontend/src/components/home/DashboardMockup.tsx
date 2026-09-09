@@ -14,7 +14,7 @@ export function DashboardMockup() {
           <div className="dash-mockup__kpis">
             <div className="dash-mockup__kpi">
               <span className="dash-mockup__kpi-label">Chiffre d&apos;affaires</span>
-              <strong>142 K€</strong>
+              <strong>57 700 FCFA</strong>
               <span className="dash-mockup__kpi-trend dash-mockup__kpi-trend--up">+12%</span>
             </div>
             <div className="dash-mockup__kpi">

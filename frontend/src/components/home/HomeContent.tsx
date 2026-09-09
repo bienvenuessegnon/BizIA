@@ -6,33 +6,32 @@ import { IconCheck } from "@/components/icons/IconCheck";
 import { useAuth } from "@/contexts/AuthContext";
 
 const FEATURES = [
-  "Importez Excel, CSV, PDF, Word et PowerPoint en un clic",
-  "Tableaux de bord automatiques et alertes intelligentes",
-  "Assistant IA qui connaît votre business",
+  "Importez un CSV ou un Excel — même pipeline que la saisie manuelle",
+  "Tableaux de bord, alertes et classements calculés par le moteur",
+  "Assistant IA ancré sur la dernière analyse",
 ];
 
 const STATS = [
-  { value: "2 min", label: "pour importer et analyser" },
-  { value: "10+", label: "formats de fichiers supportés" },
-  { value: "98%", label: "de précision sur les prévisions" },
-  { value: "500+", label: "entreprises font confiance à BizIA" },
+  { value: "CSV / Excel", label: "formats d'import du MVP" },
+  { value: "1 pipeline", label: "saisie et import partagent le store" },
+  { value: "JSON", label: "rapport exportable aujourd'hui" },
 ];
 
 const STEPS = [
   {
     n: 1,
-    title: "Importez vos fichiers",
-    desc: "Excel, PDF, Word, PowerPoint — glissez-déposez vos documents. BizIA les analyse instantanément.",
+    title: "Importez ou saisissez",
+    desc: "Catalogue et ventes en CSV/Excel, ou via les formulaires Produits et Ventes.",
   },
   {
     n: 2,
-    title: "Visualisez vos données",
-    desc: "Tableaux de bord, KPIs, graphiques de tendances générés automatiquement selon vos données.",
+    title: "Lancez l'analyse",
+    desc: "Le backend normalise, appelle le moteur ML unique, puis alimente le dashboard.",
   },
   {
     n: 3,
-    title: "Recevez des recommandations",
-    desc: "L'assistant IA analyse les tendances et vous propose des actions concrètes pour votre activité.",
+    title: "Décidez avec l'assistant",
+    desc: "Posez une question ancrée sur les KPI, alertes et recommandations de cette analyse.",
   },
 ];
 
@@ -41,7 +40,6 @@ export function HomeContent() {
 
   return (
     <div className="landing">
-      {/* ── Hero ── */}
       <section className="landing-hero">
         <div className="landing-hero__grid">
           <div className="landing-hero__text">
@@ -59,8 +57,8 @@ export function HomeContent() {
             </h1>
 
             <p className="landing-hero__subtitle">
-              BizIA transforme vos ventes, stocks, documents Excel, PDF, Word et PowerPoint en
-              indicateurs, alertes et recommandations — avec un assistant IA ancré sur votre activité.
+              BizIA transforme vos ventes et stocks (CSV, Excel ou saisie) en indicateurs, alertes
+              et recommandations — avec un assistant ancré sur votre dernière analyse.
             </p>
 
             <ul className="landing-features">
@@ -77,29 +75,30 @@ export function HomeContent() {
             ) : isAuthenticated && user ? (
               <div className="landing-hero__cta">
                 <p className="landing-welcome">
-                  Bienvenue, <strong>{user.firstName}</strong> !
+                  Bienvenue, <strong>{user.firstName}</strong>{" "}
+                  <span className="muted">(session démo locale)</span>
                 </p>
                 <div className="landing-hero__buttons">
                   <Link href="/dashboard" className="btn btn--primary btn--lg">
                     Accéder au tableau de bord →
                   </Link>
                   <Link href="/import" className="btn btn--outline btn--lg">
-                    Importer mes documents
+                    Importer un CSV / Excel
                   </Link>
                 </div>
               </div>
             ) : (
               <div className="landing-hero__cta">
                 <div className="landing-hero__buttons">
-                  <Link href="/inscription" className="btn btn--primary btn--lg">
-                    Commencer gratuitement →
+                  <Link href="/import" className="btn btn--primary btn--lg">
+                    Importer mes données →
                   </Link>
-                  <Link href="/connexion" className="btn btn--outline btn--lg">
-                    Déjà un compte ? Se connecter
+                  <Link href="/dashboard" className="btn btn--outline btn--lg">
+                    Voir le tableau de bord
                   </Link>
                 </div>
                 <p className="landing-trust">
-                  Gratuit pour démarrer · Aucune carte requise · Mise en route en 2 min
+                  Connexion / inscription = démo navigateur uniquement, sans compte serveur.
                 </p>
               </div>
             )}
@@ -111,7 +110,6 @@ export function HomeContent() {
         </div>
       </section>
 
-      {/* ── Stats ── */}
       <section className="landing-stats">
         <div className="landing-stats__grid">
           {STATS.map((s) => (
@@ -123,12 +121,11 @@ export function HomeContent() {
         </div>
       </section>
 
-      {/* ── Comment ça marche ── */}
       <section className="landing-steps-section">
         <p className="landing-section-badge">COMMENT ÇA MARCHE</p>
         <h2 className="landing-section-title">Opérationnel en 3 étapes</h2>
         <p className="landing-section-subtitle">
-          Pas de configuration complexe. Commencez à obtenir des insights en moins de 5 minutes.
+          Pas de configuration complexe. Importez, analysez, posez une question.
         </p>
 
         <div className="landing-steps">
@@ -142,25 +139,21 @@ export function HomeContent() {
         </div>
       </section>
 
-      {/* ── CTA Banner ── */}
       <section className="landing-cta-banner">
         <div className="landing-cta-banner__inner">
-          <h2>Prêt à piloter votre activité avec l&apos;intelligence artificielle ?</h2>
+          <h2>Prêt à relire vos ventes avec un moteur unique ?</h2>
           <p>
-            Rejoignez les PME et entreprises qui prennent des décisions plus rapides,
-            plus éclairées, chaque jour.
+            Importez le CSV d&apos;exemple, lancez l&apos;analyse, puis demandez à l&apos;assistant
+            quel produit rapporte le plus.
           </p>
           <div className="landing-cta-banner__buttons">
-            <Link href="/inscription" className="btn btn--white btn--lg">
-              Créer mon compte gratuitement →
+            <Link href="/import" className="btn btn--white btn--lg">
+              Aller à l&apos;import →
             </Link>
-            <Link href="/connexion" className="btn btn--ghost-white btn--lg">
-              Se connecter
+            <Link href="/chat" className="btn btn--ghost-white btn--lg">
+              Ouvrir l&apos;assistant
             </Link>
           </div>
-          <p className="landing-cta-banner__note">
-            Gratuit pour démarrer · Sans engagement · Annulez à tout moment
-          </p>
         </div>
       </section>
     </div>

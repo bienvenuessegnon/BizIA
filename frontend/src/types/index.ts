@@ -92,6 +92,8 @@ export type IngestionResult = {
   source: SourceType;
   products_ingested: number;
   sales_ingested: number;
+  sales_skipped_unknown?: number;
+  sales_skipped_duplicate?: number;
 };
 
 export type ChatReply = {

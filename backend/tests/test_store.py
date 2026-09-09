@@ -123,9 +123,32 @@ def test_extend_dataset_merges_into_same_store(tmp_path: Path) -> None:
     )
     assert {item["sku"] for item in store.list_products()} == {"HUILE-1L", "RIZ-5KG"}
     assert len(store.list_sales()) == 1
-    dataset = store.as_dataset("csv")
+    dataset = store.as_dataset()
     assert dataset["source"] == "csv"
     assert len(dataset["products"]) == 2
+    assert store.last_source() == "csv"
+
+
+def test_extend_skips_unknown_and_duplicate_sales(tmp_path: Path) -> None:
+    store = _store(tmp_path)
+    store.add_product(
+        {"sku": "HUILE-1L", "name": "Huile", "unit_cost": 1000, "unit_price": 1500, "stock_quantity": 4}
+    )
+    sale = {
+        "product_sku": "HUILE-1L",
+        "quantity": 1,
+        "unit_price": 1500,
+        "sold_at": "2026-08-26T16:00:00+00:00",
+        "channel": "csv",
+    }
+    first = store.extend_dataset(products=[], sales=[sale, {"product_sku": "GHOST", "quantity": 1, "unit_price": 1}], source="csv")
+    assert first["sales_ingested"] == 1
+    assert first["sales_skipped_unknown"] == 1
+    second = store.extend_dataset(products=[], sales=[sale], source="excel")
+    assert second["sales_ingested"] == 0
+    assert second["sales_skipped_duplicate"] == 1
+    assert len(store.list_sales()) == 1
+    assert store.last_source() == "excel"
 
 
 def test_save_and_get_last_analysis(tmp_path: Path) -> None:

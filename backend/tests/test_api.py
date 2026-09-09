@@ -23,7 +23,9 @@ def test_contract_routes_exist(client: TestClient) -> None:
 
 def test_payload_validation(client: TestClient) -> None:
     """Un payload invalide doit être rejeté par les schémas Pydantic."""
-    assert client.post("/api/products", json={"sku": "X"}).status_code == 422
+    response = client.post("/api/products", json={"sku": "X"})
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "validation_error"
     assert client.post("/api/sales", json={"quantity": -1}).status_code == 422
 
 
@@ -114,12 +116,13 @@ def test_import_feeds_same_store(client: TestClient) -> None:
     )
     assert excel_response.status_code == 200
     assert excel_response.json()["source"] == "excel"
-    assert excel_response.json()["sales_ingested"] == 16
+    assert excel_response.json()["sales_ingested"] == 0
+    assert excel_response.json()["sales_skipped_duplicate"] == 16
 
     listed_products = client.get("/api/products")
     listed_sales = client.get("/api/sales")
     assert len(listed_products.json()["items"]) == 5
-    assert len(listed_sales.json()["items"]) == 32
+    assert len(listed_sales.json()["items"]) == 16
 
     rejected = client.post(
         "/api/ingestion/files",
@@ -162,6 +165,7 @@ def test_analysis_on_sample_import(client: TestClient) -> None:
 
     ran = client.post("/api/analysis/run")
     result = ran.json()["result"]
+    assert result["source"] == "csv"
     assert result["kpis"]["revenue"] == 57700.0
     assert result["kpis"]["sales_count"] == 16
     assert result["top_profit"][0]["sku"] == "RIZ-5KG"
@@ -218,3 +222,30 @@ def test_report_without_analysis(client: TestClient) -> None:
     response = client.post("/api/reports/generate")
     assert response.status_code == 400
     assert response.json()["error"]["code"] == "no_analysis"
+
+
+def test_import_skips_unknown_sku(client: TestClient) -> None:
+    from app.utils.settings import REPO_ROOT
+
+    ghost = "sku,quantity,unit_price,sold_at\nGHOST,1,99,2026-01-01T00:00:00Z\n"
+    response = client.post(
+        "/api/ingestion/files",
+        files={"file": ("orphan.csv", ghost.encode("utf-8"), "text/csv")},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["sales_ingested"] == 0
+    assert body["sales_skipped_unknown"] == 1
+    assert client.get("/api/sales").json()["items"] == []
+
+    samples = REPO_ROOT / "data" / "samples"
+    client.post(
+        "/api/ingestion/files",
+        files={"file": ("produits.csv", samples.joinpath("produits.csv").read_bytes(), "text/csv")},
+    )
+    retry = client.post(
+        "/api/ingestion/files",
+        files={"file": ("orphan.csv", ghost.encode("utf-8"), "text/csv")},
+    )
+    assert retry.json()["sales_skipped_unknown"] == 1
+    assert client.get("/api/sales").json()["items"] == []

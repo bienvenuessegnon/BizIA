@@ -17,6 +17,18 @@ import {
 } from "@/utils/fileFormats";
 import { getApiErrorMessage } from "@/utils/apiError";
 
+function describeImport(result: IngestionResult): string {
+  const skippedUnknown = result.sales_skipped_unknown ?? 0;
+  const skippedDuplicate = result.sales_skipped_duplicate ?? 0;
+  const parts = [
+    `${result.products_ingested} produit(s)`,
+    `${result.sales_ingested} vente(s) ajoutée(s)`,
+  ];
+  if (skippedUnknown) parts.push(`${skippedUnknown} vente(s) ignorée(s) (SKU inconnu)`);
+  if (skippedDuplicate) parts.push(`${skippedDuplicate} vente(s) déjà présentes`);
+  return `${result.filename} — ${parts.join(", ")}.`;
+}
+
 export function ImportPanel() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -28,9 +40,7 @@ export function ImportPanel() {
   function pickFile(selected: File | null) {
     if (!selected) return;
     if (!isAcceptedDocument(selected)) {
-      setError(
-        "Format non supporté. Formats acceptés : CSV, Excel, PDF, Word (.doc/.docx), PowerPoint (.ppt/.pptx).",
-      );
+      setError("Format non supporté. Formats acceptés : CSV et Excel (.xlsx, .xls).");
       setFile(null);
       return;
     }
@@ -51,6 +61,7 @@ export function ImportPanel() {
 
   async function handleUpload() {
     if (!file) return;
+    if (!window.confirm(`Importer « ${file.name} » dans le store commun ?`)) return;
 
     setUploading(true);
     setError(null);
@@ -68,13 +79,13 @@ export function ImportPanel() {
     }
   }
 
-  const displayFormats = ["csv", "xlsx", "pdf", "docx", "pptx"] as const;
+  const displayFormats = ["csv", "xlsx", "xls"] as const;
 
   return (
     <AppPageLayout
       eyebrow="Données"
-      title="Import & export de documents"
-      description="Importez tous vos fichiers métier — tableurs, PDF, Word, PowerPoint — et exportez vos analyses dans le format souhaité."
+      title="Import & export"
+      description="Importez un CSV ou un Excel. Les lignes sont normalisées vers le schéma commun, comme la saisie manuelle."
     >
       <div className="card card--glass import-zone">
         <div
@@ -100,13 +111,13 @@ export function ImportPanel() {
           <IconUpload className="dropzone__icon" size={40} />
           {file ? (
             <>
-              <p className="dropzone__title">Document sélectionné</p>
+              <p className="dropzone__title">Fichier sélectionné</p>
               <p className="dropzone__filename">{file.name}</p>
               <p className="muted">{(file.size / 1024).toFixed(1)} Ko</p>
             </>
           ) : (
             <>
-              <p className="dropzone__title">Glissez votre document ici</p>
+              <p className="dropzone__title">Glissez un CSV ou un Excel ici</p>
               <p className="muted">ou cliquez pour parcourir vos fichiers</p>
             </>
           )}
@@ -124,30 +135,27 @@ export function ImportPanel() {
         {error && <Alert variant="error">{error}</Alert>}
 
         {result && (
-          <Alert variant="success" title="Document importé">
-            {result.filename} — {result.products_ingested} produit(s), {result.sales_ingested}{" "}
-            enregistrement(s) traité(s).
+          <Alert variant="success" title="Fichier importé">
+            {describeImport(result)}
           </Alert>
         )}
 
         <div className="import-actions">
           <Button onClick={handleUpload} disabled={!file || uploading} loading={uploading}>
-            Importer le document
+            Importer le fichier
           </Button>
           {uploading && <Spinner size="sm" label="Traitement en cours…" />}
         </div>
       </div>
 
       <div className="card card--glass">
-        <h2>Formats acceptés à l&apos;import</h2>
+        <h2>Formats acceptés</h2>
         <ul className="import-hints">
           <li>
-            <strong>Tableurs :</strong> CSV, Excel (.xlsx, .xls) — ventes, produits, stocks
+            <strong>Tableurs :</strong> CSV, Excel (.xlsx, .xls)
           </li>
-          <li>
-            <strong>Documents :</strong> PDF, Word (.doc, .docx), PowerPoint (.ppt, .pptx)
-          </li>
-          <li>Chaque document est normalisé puis intégré au pipeline d&apos;analyse unique</li>
+          <li>PDF, Word et PowerPoint ne sont pas supportés dans ce MVP.</li>
+          <li>Une vente dont le SKU n&apos;existe pas au catalogue est ignorée.</li>
           <li>Extensions reconnues : {ACCEPTED_EXTENSIONS.map((e) => `.${e}`).join(", ")}</li>
         </ul>
       </div>

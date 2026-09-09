@@ -1,10 +1,6 @@
 # Contrat API BizIA
 
-Version MVP 0.2 — pour travail en parallèle Imma / Uriel / Farid.
-
-> État actuel : les routes existent et valident les payloads, mais renvoient
-> `"status": "not_implemented"` avec des listes vides. La **forme** des réponses
-> ci-dessous est le contrat : Imma peut coder contre elle avant qu'Uriel n'implémente.
+Version MVP 0.3 — saisie manuelle et import CSV/Excel alimentent le même pipeline.
 
 Le serveur FastAPI régénère aussi une spec interactive : `http://localhost:8000/docs`.  
 Fichier OpenAPI versionné : [openapi.yaml](openapi.yaml).
@@ -20,9 +16,11 @@ Corps JSON :
 | HTTP | code typique | Cas |
 | --- | --- | --- |
 | 400 | `parse_error` | Fichier illisible |
-| 404 | `unknown_product` | Vente vers un SKU inconnu |
+| 400 | `no_analysis` | Rapport sans analyse |
+| 404 | `unknown_product` | Vente saisie vers un SKU inconnu |
 | 415 | `unsupported_type` | Autre chose que CSV/Excel |
 | 422 | `unknown_schema` | Colonnes non mappées |
+| 422 | `validation_error` | Payload Pydantic invalide |
 
 ## Endpoints
 
@@ -79,11 +77,18 @@ Réponse :
   "filename": "ventes.csv",
   "source": "csv",
   "products_ingested": 0,
-  "sales_ingested": 16
+  "sales_ingested": 16,
+  "sales_skipped_unknown": 0,
+  "sales_skipped_duplicate": 0
 }
 ```
 
-Les lignes sont **normalisées** puis fusionnées dans le store commun.
+Les lignes sont **normalisées** puis fusionnées dans le store commun. Une vente
+dont le SKU n'est pas au catalogue est ignorée (`sales_skipped_unknown`). Un
+réimport identique n'ajoute pas de doublon (`sales_skipped_duplicate`).
+
+La dernière source d'import (`csv` / `excel`) est conservée et renvoyée dans
+`result.source` au prochain `POST /api/analysis/run`.
 
 ### Analyse — `POST /api/analysis/run` · `GET /api/analysis/summary`
 

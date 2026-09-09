@@ -106,7 +106,7 @@ export function SignupForm() {
   return (
     <AuthCard
       title="Créer un compte"
-      subtitle="Rejoignez BizIA et transformez vos données en décisions."
+      subtitle="Démo locale : le compte reste dans ce navigateur, pas sur l'API."
       footer={
         <p className="auth-card__switch">
           Vous avez déjà un compte ?{" "}

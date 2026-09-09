@@ -1,9 +1,7 @@
 export function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("fr-FR", {
-    style: "currency",
-    currency: "EUR",
+  return `${new Intl.NumberFormat("fr-FR", {
     maximumFractionDigits: 0,
-  }).format(value);
+  }).format(value)} FCFA`;
 }
 
 export function formatPercent(value: number): string {

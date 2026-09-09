@@ -22,6 +22,7 @@ _EMPTY: dict[str, Any] = {
     "products": [],
     "sales": [],
     "last_analysis": None,
+    "last_source": "manual",
 }
 
 
@@ -111,13 +112,58 @@ class JsonStore:
             return copy.deepcopy(sale)
 
     def extend_dataset(
-        self, products: list[dict[str, Any]], sales: list[dict[str, Any]]
-    ) -> None:
-        """Fusion d'un lot importé dans le même store que la saisie manuelle."""
+        self,
+        products: list[dict[str, Any]],
+        sales: list[dict[str, Any]],
+        source: str = "csv",
+    ) -> dict[str, int]:
+        """Fusion d'un lot importé dans le même store que la saisie manuelle.
+
+        Les ventes dont le SKU n'est pas au catalogue sont ignorées (comme le 404
+        de la saisie manuelle). Les doublons exacts (réimport) aussi.
+        """
+        stats = {
+            "products_ingested": 0,
+            "sales_ingested": 0,
+            "sales_skipped_unknown": 0,
+            "sales_skipped_duplicate": 0,
+        }
         for product in products:
             self.add_product(product)
+            stats["products_ingested"] += 1
         for sale in sales:
+            sku = str(sale.get("product_sku") or "").strip()
+            if not sku or self.get_product(sku) is None:
+                stats["sales_skipped_unknown"] += 1
+                continue
+            if self.has_equivalent_sale(sale):
+                stats["sales_skipped_duplicate"] += 1
+                continue
             self.add_sale(sale)
+            stats["sales_ingested"] += 1
+        self.record_source(source)
+        return stats
+
+    def has_equivalent_sale(self, payload: dict[str, Any]) -> bool:
+        product_sku = str(payload.get("product_sku") or "").strip()
+        incoming_id = str(payload.get("id") or "").strip()
+        with self._lock:
+            data = self._load()
+            catalog = self._find_product(data["products"], product_sku)
+            incoming = self._normalize_sale(payload, catalog)
+            incoming_key = self._sale_key(incoming)
+            for existing in data["sales"]:
+                if incoming_id and str(existing.get("id") or "") == incoming_id:
+                    return True
+                if self._sale_key(existing) == incoming_key:
+                    return True
+            return False
+
+    def record_source(self, source: str) -> None:
+        with self._lock:
+            data = self._load()
+            data["last_source"] = source if source in {"manual", "csv", "excel"} else "unknown"
+            self._dump(data)
 
     def save_analysis(self, analysis: dict[str, Any]) -> None:
         with self._lock:
@@ -130,15 +176,28 @@ class JsonStore:
             analysis = self._load()["last_analysis"]
             return copy.deepcopy(analysis) if analysis is not None else None
 
-    def as_dataset(self, source: str = "manual") -> dict[str, Any]:
+    def last_source(self) -> str:
+        with self._lock:
+            return str(self._load().get("last_source") or "manual")
+
+    def as_dataset(self, source: str | None = None) -> dict[str, Any]:
         """Sortie conforme à `shared/contrats/canonical-dataset.schema.json`."""
         with self._lock:
             data = self._load()
+            resolved = source or data.get("last_source") or "manual"
             return {
-                "source": source,
+                "source": resolved,
                 "products": copy.deepcopy(data["products"]),
                 "sales": copy.deepcopy(data["sales"]),
             }
+
+    def _sale_key(self, sale: dict[str, Any]) -> tuple[str, float, float, str]:
+        return (
+            _sku_key(sale.get("product_sku")),
+            round(_as_float(sale.get("quantity")), 6),
+            round(_as_float(sale.get("unit_price")), 6),
+            str(sale.get("sold_at") or ""),
+        )
 
     def _normalize_product(
         self, payload: dict[str, Any], existing: dict[str, Any] | None
@@ -218,6 +277,7 @@ class JsonStore:
             "products": list(raw.get("products") or []),
             "sales": list(raw.get("sales") or []),
             "last_analysis": raw.get("last_analysis"),
+            "last_source": raw.get("last_source") or "manual",
         }
 
     def _dump(self, data: dict[str, Any]) -> None:

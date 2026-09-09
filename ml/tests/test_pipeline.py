@@ -84,6 +84,23 @@ def test_clean_dataset_survives_garbage_input() -> None:
     assert cleaned == {"source": "unknown", "products": [], "sales": []}
 
 
+def test_all_invalid_dates_use_stable_fallback() -> None:
+    from ml.preprocessing.clean import STABLE_UNKNOWN_SOLD_AT
+
+    cleaned = clean_dataset(
+        {
+            "source": "csv",
+            "products": [{"sku": "A", "name": "A", "unit_cost": 1, "unit_price": 2, "stock_quantity": 1}],
+            "sales": [
+                {"product_sku": "A", "quantity": 1, "unit_price": 2, "sold_at": "pas une date"},
+                {"product_sku": "A", "quantity": 1, "unit_price": 2, "sold_at": None},
+            ],
+        }
+    )
+    expected = STABLE_UNKNOWN_SOLD_AT.isoformat()
+    assert all(sale["sold_at"] == expected for sale in cleaned["sales"])
+
+
 def test_compute_kpis(dataset: dict) -> None:
     """CA, bénéfice et marges sur un jeu de données aux totaux connus."""
     kpis = analyze(dataset)["kpis"]

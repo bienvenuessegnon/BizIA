@@ -115,7 +115,7 @@ export function SalesPanel() {
             <Input
               name="unit_price"
               type="number"
-              label="Prix unitaire (€)"
+              label="Prix unitaire (FCFA)"
               min={0}
               value={form.unit_price || ""}
               onChange={(e) => setForm((f) => ({ ...f, unit_price: Number(e.target.value) }))}

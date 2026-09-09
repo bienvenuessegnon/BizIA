@@ -149,10 +149,7 @@ export function DocumentFormatIcon({
   size,
 }: IconProps & { format: DocumentFormat }) {
   if (format === "csv") return <IconFileCsv className={className} size={size} />;
-  if (format === "xlsx" || format === "xls") return <IconFileExcel className={className} size={size} />;
-  if (format === "pdf") return <IconFilePdf className={className} size={size} />;
-  if (format === "doc" || format === "docx") return <IconFileWord className={className} size={size} />;
-  return <IconFilePowerpoint className={className} size={size} />;
+  return <IconFileExcel className={className} size={size} />;
 }
 
 export type QuickActionIcon = "package" | "coins" | "upload" | "bot";

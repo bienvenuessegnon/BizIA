@@ -30,7 +30,7 @@ const QUICK_ACTIONS: Array<{
 }> = [
   { href: "/produits", title: "Ajouter des produits", desc: "Saisie manuelle de votre catalogue", icon: "package" },
   { href: "/ventes", title: "Enregistrer des ventes", desc: "Suivez chaque transaction", icon: "coins" },
-  { href: "/import", title: "Importer un document", desc: "Excel, CSV, PDF, Word, PowerPoint", icon: "upload" },
+  { href: "/import", title: "Importer un fichier", desc: "CSV ou Excel vers le store commun", icon: "upload" },
   { href: "/chat", title: "Parler à l'assistant", desc: "Questions sur votre activité", icon: "bot" },
 ];
 
@@ -86,6 +86,13 @@ export function DashboardPanel() {
   }, [loadSummary]);
 
   async function handleRunAnalysis() {
+    if (
+      !window.confirm(
+        "Lancer l'analyse sur les produits et ventes actuellement enregistrés ?",
+      )
+    ) {
+      return;
+    }
     setAnalyzing(true);
     setActionError(null);
     try {
@@ -257,6 +264,36 @@ export function DashboardPanel() {
                 </div>
 
                 <div className="card card--glass dashboard-panel">
+                  <h2>Top rentabilité</h2>
+                  {result.top_profit.length === 0 ? (
+                    <p className="muted">Aucune donnée pour le moment.</p>
+                  ) : (
+                    <div className="table-wrap">
+                      <table className="data-table">
+                        <thead>
+                          <tr>
+                            <th>Produit</th>
+                            <th>Bénéfice</th>
+                            <th>CA</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {result.top_profit.map((p) => (
+                            <tr key={p.sku}>
+                              <td>{p.name}</td>
+                              <td>{formatCurrency(p.profit)}</td>
+                              <td>{formatCurrency(p.revenue)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="page-grid">
+                <div className="card card--glass dashboard-panel">
                   <h2>Stocks faibles</h2>
                   {result.low_stock.length === 0 ? (
                     <p className="muted">Aucun stock critique détecté.</p>
@@ -290,6 +327,25 @@ export function DashboardPanel() {
                       );
                     })}
                   </div>
+                </div>
+              )}
+
+              {result.anomalies.length > 0 && (
+                <div className="card card--glass dashboard-panel">
+                  <h2>Anomalies</h2>
+                  <ul className="alert-list">
+                    {result.anomalies.map((item) => (
+                      <li key={`${item.type}-${item.period}`}>
+                        <Badge variant={item.severity === "high" ? "high" : "medium"}>
+                          {item.severity}
+                        </Badge>
+                        <div>
+                          <strong>{item.period}</strong>
+                          <p className="muted">{item.message}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
 
