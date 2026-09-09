@@ -12,11 +12,13 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+!**/.env.example
 
 # Dépendances & caches
 node_modules/
 __pycache__/
 *.pyc
+.pytest_cache/
 .venv/
 venv/
 dist/
@@ -26,11 +28,25 @@ coverage/
 frontend/.next/
 frontend/out/
 *.egg-info/
+.mypy_cache/
+.ruff_cache/
 
-# Données locales (imports utilisateurs, extraits)
+# Données locales (imports utilisateurs)
 data/local/
+data/uploads/*
+!data/uploads/.gitkeep
+*.db
+*.sqlite
+*.sqlite3
+
+# Fichiers tabulaires / PDF hors échantillons versionnés
 *.xlsx
 *.xls
 *.csv
 *.pdf
+!data/samples/**
 !docs/**/*.pdf
+
+# Logs
+*.log
+npm-debug.log*
