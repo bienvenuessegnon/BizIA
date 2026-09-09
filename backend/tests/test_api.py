@@ -3,7 +3,6 @@
 Les assertions métier sont ajoutées au fur et à mesure de l'implémentation.
 """
 
-import pytest
 from fastapi.testclient import TestClient
 
 
@@ -80,6 +79,51 @@ def test_manual_entry_persists(client: TestClient) -> None:
     assert len(sales.json()["items"]) == 1
 
 
-@pytest.mark.skip(reason="TODO(uriel): implémenter l'import CSV/Excel")
-def test_import_feeds_same_store() -> None:
-    ...
+def test_import_feeds_same_store(client: TestClient) -> None:
+    from app.utils.settings import REPO_ROOT
+
+    samples = REPO_ROOT / "data" / "samples"
+
+    products_response = client.post(
+        "/api/ingestion/files",
+        files={"file": ("produits.csv", samples.joinpath("produits.csv").read_bytes(), "text/csv")},
+    )
+    assert products_response.status_code == 200
+    products_body = products_response.json()
+    assert products_body["status"] == "accepted"
+    assert products_body["source"] == "csv"
+    assert products_body["products_ingested"] == 5
+    assert products_body["sales_ingested"] == 0
+
+    sales_response = client.post(
+        "/api/ingestion/files",
+        files={"file": ("ventes.csv", samples.joinpath("ventes.csv").read_bytes(), "text/csv")},
+    )
+    assert sales_response.status_code == 200
+    assert sales_response.json()["sales_ingested"] == 16
+
+    excel_response = client.post(
+        "/api/ingestion/files",
+        files={
+            "file": (
+                "ventes.xlsx",
+                samples.joinpath("ventes.xlsx").read_bytes(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+        },
+    )
+    assert excel_response.status_code == 200
+    assert excel_response.json()["source"] == "excel"
+    assert excel_response.json()["sales_ingested"] == 16
+
+    listed_products = client.get("/api/products")
+    listed_sales = client.get("/api/sales")
+    assert len(listed_products.json()["items"]) == 5
+    assert len(listed_sales.json()["items"]) == 32
+
+    rejected = client.post(
+        "/api/ingestion/files",
+        files={"file": ("notes.pdf", b"%PDF-fake", "application/pdf")},
+    )
+    assert rejected.status_code == 415
+    assert rejected.json()["error"]["code"] == "unsupported_type"
