@@ -152,9 +152,8 @@ export function ImportPanel() {
         <h2>Formats acceptés</h2>
         <ul className="import-hints">
           <li>
-            <strong>Tableurs :</strong> CSV, Excel (.xlsx, .xls)
+            <strong>Tableurs :</strong> CSV et Excel (.xlsx, .xls)
           </li>
-          <li>PDF, Word et PowerPoint ne sont pas supportés dans ce MVP.</li>
           <li>Une vente dont le SKU n&apos;existe pas au catalogue est ignorée.</li>
           <li>Extensions reconnues : {ACCEPTED_EXTENSIONS.map((e) => `.${e}`).join(", ")}</li>
         </ul>

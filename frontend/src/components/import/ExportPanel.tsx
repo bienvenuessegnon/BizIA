@@ -34,8 +34,7 @@ export function ExportPanel() {
         <div>
           <h2>Exporter l&apos;analyse</h2>
           <p className="muted">
-            Le MVP exporte un rapport JSON. PDF, Excel et Word ne sont pas encore produits par
-            l&apos;API.
+            Le MVP télécharge un rapport JSON de la dernière analyse.
           </p>
         </div>
       </div>
