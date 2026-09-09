@@ -1,1 +1,1 @@
-"""Moteur IA : LLM, NLP, RAG, insights et workflows agentiques."""
+"""Moteur conversationnel (LLM optionnel). Logique MVP dans `app/services/chat.py`."""

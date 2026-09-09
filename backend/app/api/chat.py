@@ -9,9 +9,11 @@ class ChatMessage(BaseModel):
 
 
 @router.post("/messages")
-def chat_message(payload: ChatMessage) -> dict[str, str]:
-    """Dialogue avec les données — app.ai (LLM / RAG)."""
+def chat_message(payload: ChatMessage) -> dict:
+    """TODO(uriel): services.chat.answer_from_analysis(message, store.get_last_analysis())."""
     return {
-        "reply": "Moteur conversationnel à implémenter.",
+        "reply": "",
+        "grounded": False,
         "user_message": payload.message,
+        "status": "not_implemented",
     }

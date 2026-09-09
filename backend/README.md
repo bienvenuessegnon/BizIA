@@ -1,40 +1,47 @@
-# Backend — BizIA
+# Backend — Uriel
 
-Dossier des équipes **backend**, **data**, **ML** et **IA**. Stack : Python, FastAPI, Pandas, NumPy, Scikit-learn, LLM.
+Stack : **Python 3.12, FastAPI, Pydantic**. Persistance MVP : JSON (`data/local/bizia.json`).
 
-## Périmètre
+## Lancer
 
-- API REST
-- Ingestion (CSV, Excel, PDF, documents)
-- Nettoyage et structuration
-- Analyse, anomalies, prédictions
-- Moteur IA / LLM (chat, insights, recommandations)
-- Génération de rapports
-
-L’interface utilisateur reste dans `frontend/`.
-
-## Démarrer
+Depuis la **racine du dépôt** :
 
 ```bash
-cd backend
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+cd ..
+export PYTHONPATH="$(pwd)"
+cd backend
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-API : [http://localhost:8000](http://localhost:8000)  
-Docs OpenAPI : [http://localhost:8000/docs](http://localhost:8000/docs)
+- API : http://localhost:8000
+- Swagger : http://localhost:8000/docs
+
+`PYTHONPATH` doit pointer vers la racine pour importer le package `ml/`.
 
 ## Structure
 
 ```
-backend/
-  app/main.py          point d’entrée FastAPI
-  app/api/             routes REST
-  app/ingestion/       import de fichiers
-  app/analysis/        analyse + ML
-  app/ai/              LLM, RAG, insights
+backend/app/
+  api/         routes REST
+  schemas/     contrats Pydantic
+  services/    store, ingestion, pipeline, chat
+  analysis/    adaptateur vers ml.pipeline
+  models/      place pour un ORM plus tard
+  routes/      alias / notes
+  utils/
+  main.py
+tests/
 ```
 
-Contrats d’API : `shared/contrats/`.
+## Flux
+
+```
+Frontend → API → normalisation → ml.analyze() → JSON → Frontend
+```
+
+Saisie manuelle (`POST /api/products`, `POST /api/sales`) et import (`POST /api/ingestion/files`) écrivent dans le **même store**, puis `POST /api/analysis/run` appelle **le même** moteur.
+
+Branche : `uriel_backend`.
