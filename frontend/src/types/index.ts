@@ -75,6 +75,8 @@ export type AnalysisResult = {
   low_stock: LowStockItem[];
   trend: TrendPoint[];
   week_over_week: {
+    metric: "profit";
+    window_days: number;
     current_window_profit: number;
     previous_window_profit: number;
     delta: number;

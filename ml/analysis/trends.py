@@ -65,6 +65,8 @@ def week_over_week(trend: list[dict[str, Any]]) -> dict[str, Any] | None:
     delta = money(current_profit - previous_profit)
 
     return {
+        "metric": "profit",
+        "window_days": window,
         "current_window_profit": current_profit,
         "previous_window_profit": previous_profit,
         "delta": delta,

@@ -76,13 +76,28 @@ export const api = {
   chat: (message: string) =>
     request<ChatReply>("/api/chat/messages", { method: "POST", body: JSON.stringify({ message }) }),
   reports: {
-    downloadJson: async () => {
-      const data = await request<{ status: string; report: unknown }>("/api/reports/generate", {
-        method: "POST",
-      });
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-      downloadBlob(blob, "bizia-rapport.json");
-      return data;
+    download: async (format: "json" | "pdf" | "docx") => {
+      let response: Response;
+      try {
+        response = await fetch(`${API_URL}/api/reports/generate?format=${format}`, {
+          method: "POST",
+        });
+      } catch {
+        throw new ApiError("network", "Serveur backend inaccessible.");
+      }
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new ApiError("http", data?.error?.message ?? "Export indisponible.");
+      }
+      if (format === "json") {
+        const data = await response.json();
+        downloadBlob(
+          new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }),
+          "bizia-rapport.json",
+        );
+        return;
+      }
+      downloadBlob(await response.blob(), `bizia-rapport.${format}`);
     },
   },
 };

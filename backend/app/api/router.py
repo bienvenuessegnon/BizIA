@@ -1,8 +1,9 @@
 from fastapi import APIRouter
 
-from app.api import alerts, analysis, chat, ingestion, products, reports, sales
+from app.api import alerts, analysis, auth, chat, ingestion, products, reports, sales
 
 api_router = APIRouter()
+api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 api_router.include_router(products.router, prefix="/products", tags=["products"])
 api_router.include_router(sales.router, prefix="/sales", tags=["sales"])
 api_router.include_router(ingestion.router, prefix="/ingestion", tags=["ingestion"])

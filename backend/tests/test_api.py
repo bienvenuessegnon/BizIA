@@ -217,11 +217,65 @@ def test_chat_requires_analysis_then_answers(client: TestClient) -> None:
     assert payload["status"] == "ok"
     assert payload["report"]["kpis"]["sales_count"] == 16
 
+    pdf = client.post("/api/reports/generate?format=pdf")
+    assert pdf.status_code == 200
+    assert pdf.headers["content-type"] == "application/pdf"
+    assert pdf.content.startswith(b"%PDF")
+
+    docx = client.post("/api/reports/generate?format=docx")
+    assert docx.status_code == 200
+    assert "wordprocessingml" in docx.headers["content-type"]
+    assert docx.content.startswith(b"PK")
+
 
 def test_report_without_analysis(client: TestClient) -> None:
     response = client.post("/api/reports/generate")
     assert response.status_code == 400
     assert response.json()["error"]["code"] == "no_analysis"
+
+
+def test_server_auth_round_trip(client: TestClient) -> None:
+    registered = client.post(
+        "/api/auth/register",
+        json={
+            "first_name": "Ada",
+            "last_name": "Lovelace",
+            "email": "ADA@example.com",
+            "password": "mot-de-passe-solide",
+        },
+    )
+    assert registered.status_code == 201
+    session = registered.json()
+    assert session["user"]["email"] == "ada@example.com"
+    assert session["token"]
+
+    duplicate = client.post(
+        "/api/auth/register",
+        json={
+            "first_name": "Ada",
+            "last_name": "Lovelace",
+            "email": "ada@example.com",
+            "password": "mot-de-passe-solide",
+        },
+    )
+    assert duplicate.status_code == 409
+    assert duplicate.json()["error"]["code"] == "email_already_used"
+
+    bad_login = client.post(
+        "/api/auth/login",
+        json={"email": "ada@example.com", "password": "incorrect"},
+    )
+    assert bad_login.status_code == 401
+
+    logged_in = client.post(
+        "/api/auth/login",
+        json={"email": "ada@example.com", "password": "mot-de-passe-solide"},
+    )
+    token = logged_in.json()["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    assert client.get("/api/auth/me", headers=headers).json()["user"]["first_name"] == "Ada"
+    assert client.post("/api/auth/logout", headers=headers).status_code == 204
+    assert client.get("/api/auth/me", headers=headers).status_code == 401
 
 
 def test_import_skips_unknown_sku(client: TestClient) -> None:

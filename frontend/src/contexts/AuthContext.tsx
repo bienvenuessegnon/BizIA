@@ -28,9 +28,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const session = authService.getStoredSession();
-    setUser(session?.user ?? null);
-    setIsLoading(false);
+    authService
+      .restoreSession()
+      .then((session) => setUser(session?.user ?? null))
+      .finally(() => setIsLoading(false));
   }, []);
 
   const signup = useCallback(async (payload: SignupPayload) => {

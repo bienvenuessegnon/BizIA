@@ -96,6 +96,16 @@ Le backend appelle `ml.pipeline.analyze`. Query optionnelle : `include_forecast=
 
 `result` contient : `kpis`, `top_sold`, `top_profit`, `low_stock`, `trend`, `week_over_week`, `anomalies`, `alerts`, `insights`, `recommendations`.
 
+`week_over_week` compare le **bénéfice** sur deux fenêtres de même durée. Les
+champs `metric: "profit"` et `window_days` rendent cette convention explicite.
+
+### Auth — `POST /api/auth/register` · `POST /api/auth/login`
+
+L'inscription et la connexion renvoient `{ "user": {...}, "token": "..." }`.
+Le mot de passe est haché avec Argon2 et le store ne conserve que l'empreinte
+SHA-256 du jeton. `GET /api/auth/me` et `POST /api/auth/logout` utilisent
+`Authorization: Bearer <token>`.
+
 ### Alertes — `GET /api/alerts`
 
 ```json
@@ -114,9 +124,9 @@ Le backend appelle `ml.pipeline.analyze`. Query optionnelle : `include_forecast=
 
 `grounded: true` = réponse construite à partir du dernier `result` d’analyse.
 
-### Rapport — `POST /api/reports/generate`
+### Rapport — `POST /api/reports/generate?format=json|pdf|docx`
 
-JSON de synthèse (PDF avancé : plus tard).
+Rapport réel JSON, PDF ou Word généré depuis la dernière analyse.
 
 ## Règle d’or
 

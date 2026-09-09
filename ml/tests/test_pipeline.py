@@ -147,6 +147,8 @@ def test_trends_and_anomalies(dataset: dict) -> None:
     assert result["trend"][4]["revenue"] == 0.0
 
     assert result["week_over_week"]["delta"] > 0
+    assert result["week_over_week"]["metric"] == "profit"
+    assert result["week_over_week"]["window_days"] == 3
     assert [anomaly["period"] for anomaly in result["anomalies"]] == ["2026-01-06"]
     assert result["anomalies"][0]["type"] == "revenue_spike"
 

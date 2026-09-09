@@ -92,7 +92,7 @@ export function LoginForm() {
   return (
     <AuthCard
       title="Connexion"
-      subtitle="Démo locale uniquement : aucun compte n'est créé sur le serveur."
+      subtitle="Accédez à votre compte BizIA sécurisé."
       footer={
         <p className="auth-card__switch">
           Vous n&apos;avez pas encore de compte ?{" "}

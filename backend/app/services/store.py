@@ -23,6 +23,8 @@ _EMPTY: dict[str, Any] = {
     "sales": [],
     "last_analysis": None,
     "last_source": "manual",
+    "users": [],
+    "sessions": [],
 }
 
 
@@ -172,6 +174,61 @@ class JsonStore:
             data["last_analysis"] = copy.deepcopy(analysis)
             self._dump(data)
 
+    def find_user_by_email(self, email: str) -> dict[str, Any] | None:
+        key = email.strip().lower()
+        with self._lock:
+            user = next(
+                (item for item in self._load()["users"] if item.get("email") == key),
+                None,
+            )
+            return copy.deepcopy(user) if user else None
+
+    def find_user_by_id(self, user_id: str) -> dict[str, Any] | None:
+        with self._lock:
+            user = next(
+                (item for item in self._load()["users"] if item.get("id") == user_id),
+                None,
+            )
+            return copy.deepcopy(user) if user else None
+
+    def add_user(self, user: dict[str, Any]) -> dict[str, Any]:
+        with self._lock:
+            data = self._load()
+            data["users"].append(copy.deepcopy(user))
+            self._dump(data)
+            return copy.deepcopy(user)
+
+    def save_session(self, session: dict[str, Any]) -> None:
+        with self._lock:
+            data = self._load()
+            data["sessions"] = [
+                item
+                for item in data["sessions"]
+                if item.get("user_id") != session.get("user_id")
+            ]
+            data["sessions"].append(copy.deepcopy(session))
+            self._dump(data)
+
+    def find_session(self, token_hash: str) -> dict[str, Any] | None:
+        with self._lock:
+            session = next(
+                (
+                    item
+                    for item in self._load()["sessions"]
+                    if item.get("token_hash") == token_hash
+                ),
+                None,
+            )
+            return copy.deepcopy(session) if session else None
+
+    def revoke_session(self, token_hash: str) -> None:
+        with self._lock:
+            data = self._load()
+            data["sessions"] = [
+                item for item in data["sessions"] if item.get("token_hash") != token_hash
+            ]
+            self._dump(data)
+
     def get_last_analysis(self) -> dict[str, Any] | None:
         with self._lock:
             analysis = self._load()["last_analysis"]
@@ -279,6 +336,8 @@ class JsonStore:
             "sales": list(raw.get("sales") or []),
             "last_analysis": raw.get("last_analysis"),
             "last_source": raw.get("last_source") or "manual",
+            "users": list(raw.get("users") or []),
+            "sessions": list(raw.get("sessions") or []),
         }
 
     def _dump(self, data: dict[str, Any]) -> None:

@@ -207,7 +207,10 @@ export function DashboardPanel() {
               {result.week_over_week && (
                 <div className="card card--glass dashboard-panel">
                   <div className="dashboard-panel__head">
-                    <h2>Évolution hebdomadaire</h2>
+                    <h2>
+                      Évolution du bénéfice ({result.week_over_week.window_days} jour
+                      {result.week_over_week.window_days > 1 ? "s" : ""} / période)
+                    </h2>
                     <Badge variant={result.week_over_week.delta >= 0 ? "low" : "high"}>
                       {result.week_over_week.delta >= 0 ? "Hausse" : "Baisse"}
                     </Badge>

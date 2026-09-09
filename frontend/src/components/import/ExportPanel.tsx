@@ -7,23 +7,29 @@ import { Button } from "@/components/ui/Button";
 import { api } from "@/services/api";
 import { getApiErrorMessage } from "@/utils/apiError";
 
+const FORMATS = [
+  { value: "json", label: "JSON" },
+  { value: "pdf", label: "PDF" },
+  { value: "docx", label: "Word" },
+] as const;
+
 export function ExportPanel() {
-  const [exporting, setExporting] = useState(false);
+  const [exporting, setExporting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  async function handleExport() {
-    setExporting(true);
+  async function handleExport(format: (typeof FORMATS)[number]["value"]) {
+    setExporting(format);
     setError(null);
     setSuccess(null);
 
     try {
-      await api.reports.downloadJson();
-      setSuccess("Rapport JSON téléchargé (contrat MVP).");
+      await api.reports.download(format);
+      setSuccess(`Rapport ${format.toUpperCase()} téléchargé.`);
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
-      setExporting(false);
+      setExporting(null);
     }
   }
 
@@ -34,7 +40,7 @@ export function ExportPanel() {
         <div>
           <h2>Exporter l&apos;analyse</h2>
           <p className="muted">
-            Le MVP télécharge un rapport JSON de la dernière analyse.
+            Téléchargez la dernière analyse en JSON, PDF ou document Word.
           </p>
         </div>
       </div>
@@ -42,9 +48,18 @@ export function ExportPanel() {
       {error && <Alert variant="warning">{error}</Alert>}
       {success && <Alert variant="success">{success}</Alert>}
 
-      <Button onClick={handleExport} loading={exporting} disabled={exporting}>
-        Télécharger le rapport JSON
-      </Button>
+      <div className="format-grid">
+        {FORMATS.map((format) => (
+          <Button
+            key={format.value}
+            onClick={() => handleExport(format.value)}
+            loading={exporting === format.value}
+            disabled={exporting !== null}
+          >
+            Télécharger {format.label}
+          </Button>
+        ))}
+      </div>
     </div>
   );
 }

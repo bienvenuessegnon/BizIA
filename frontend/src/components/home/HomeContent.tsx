@@ -76,7 +76,7 @@ export function HomeContent() {
               <div className="landing-hero__cta">
                 <p className="landing-welcome">
                   Bienvenue, <strong>{user.firstName}</strong>{" "}
-                  <span className="muted">(session démo locale)</span>
+                  <span className="muted">(session serveur sécurisée)</span>
                 </p>
                 <div className="landing-hero__buttons">
                   <Link href="/dashboard" className="btn btn--primary btn--lg">
@@ -98,7 +98,7 @@ export function HomeContent() {
                   </Link>
                 </div>
                 <p className="landing-trust">
-                  Connexion / inscription = démo navigateur uniquement, sans compte serveur.
+                  Créez un compte serveur pour retrouver une session vérifiée.
                 </p>
               </div>
             )}

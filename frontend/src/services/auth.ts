@@ -1,21 +1,9 @@
-/**
- * Service d'authentification frontend.
- *
- * Aucun endpoint backend n'existe encore pour l'auth BizIA.
- * Stockage local (localStorage) pour la démo / le développement.
- *
- * Endpoints futurs attendus (backend Uriel) :
- *   POST /api/auth/register  → { first_name, last_name, email, password }
- *   POST /api/auth/login     → { email, password }
- *   POST /api/auth/logout    → (optionnel)
- */
+/** Client d'authentification serveur. Seul le jeton de session reste local. */
 
 import type { AuthSession, LoginPayload, SignupPayload, User } from "@/types/auth";
 
-const USERS_KEY = "bizia_auth_users";
 const SESSION_KEY = "bizia_auth_session";
-
-type StoredUser = User & { password: string };
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export class AuthServiceError extends Error {
   code: "email_already_used" | "invalid_credentials" | "network_error";
@@ -25,31 +13,6 @@ export class AuthServiceError extends Error {
     this.code = code;
     this.name = "AuthServiceError";
   }
-}
-
-function delay(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function readUsers(): StoredUser[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(USERS_KEY);
-    return raw ? (JSON.parse(raw) as StoredUser[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeUsers(users: StoredUser[]) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-}
-
-function toSession(user: User): AuthSession {
-  return {
-    user,
-    token: `local_${user.id}_${Date.now()}`,
-  };
 }
 
 export function getStoredSession(): AuthSession | null {
@@ -70,65 +33,97 @@ function persistSession(session: AuthSession) {
   localStorage.setItem(SESSION_KEY, JSON.stringify(session));
 }
 
-export async function signup(payload: SignupPayload): Promise<AuthSession> {
-  await delay(600);
+type ApiUser = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+};
 
-  const email = payload.email.trim().toLowerCase();
-  const users = readUsers();
+type ApiSession = { user: ApiUser; token: string };
 
-  if (users.some((u) => u.email.toLowerCase() === email)) {
+function mapSession(value: ApiSession): AuthSession {
+  return {
+    token: value.token,
+    user: {
+      id: value.user.id,
+      firstName: value.user.first_name,
+      lastName: value.user.last_name,
+      email: value.user.email,
+    },
+  };
+}
+
+async function authRequest<T>(path: string, init: RequestInit): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}${path}`, {
+      ...init,
+      headers: { "Content-Type": "application/json", ...init.headers },
+    });
+  } catch {
+    throw new AuthServiceError("network_error", "Serveur d'authentification inaccessible.");
+  }
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const code = data?.error?.code;
     throw new AuthServiceError(
-      "email_already_used",
-      "Cette adresse e-mail est déjà utilisée.",
+      code === "email_already_used" ? code : "invalid_credentials",
+      data?.error?.message ?? "Authentification impossible.",
     );
   }
+  return data as T;
+}
 
-  const user: StoredUser = {
-    id: crypto.randomUUID(),
-    firstName: payload.firstName.trim(),
-    lastName: payload.lastName.trim(),
-    email,
-    password: payload.password,
-  };
-
-  writeUsers([...users, user]);
-  const session = toSession({
-    id: user.id,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    email: user.email,
+export async function signup(payload: SignupPayload): Promise<AuthSession> {
+  const data = await authRequest<ApiSession>("/api/auth/register", {
+    method: "POST",
+    body: JSON.stringify({
+      first_name: payload.firstName,
+      last_name: payload.lastName,
+      email: payload.email,
+      password: payload.password,
+    }),
   });
+  const session = mapSession(data);
   persistSession(session);
   return session;
 }
 
 export async function login(payload: LoginPayload): Promise<AuthSession> {
-  await delay(500);
-
-  const email = payload.email.trim().toLowerCase();
-  const users = readUsers();
-  const match = users.find(
-    (u) => u.email.toLowerCase() === email && u.password === payload.password,
-  );
-
-  if (!match) {
-    throw new AuthServiceError(
-      "invalid_credentials",
-      "E-mail ou mot de passe incorrect.",
-    );
-  }
-
-  const session = toSession({
-    id: match.id,
-    firstName: match.firstName,
-    lastName: match.lastName,
-    email: match.email,
+  const data = await authRequest<ApiSession>("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify(payload),
   });
+  const session = mapSession(data);
   persistSession(session);
   return session;
 }
 
 export async function logout(): Promise<void> {
-  await delay(200);
+  const session = getStoredSession();
+  if (session) {
+    await authRequest<void>("/api/auth/logout", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${session.token}` },
+    }).catch(() => undefined);
+  }
   clearSession();
+}
+
+export async function restoreSession(): Promise<AuthSession | null> {
+  const session = getStoredSession();
+  if (!session) return null;
+  try {
+    const data = await authRequest<{ user: ApiUser }>("/api/auth/me", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${session.token}` },
+    });
+    const restored = mapSession({ token: session.token, user: data.user });
+    persistSession(restored);
+    return restored;
+  } catch {
+    clearSession();
+    return null;
+  }
 }
