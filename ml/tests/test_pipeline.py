@@ -50,6 +50,35 @@ def test_clean_dataset() -> None:
     assert second["sold_at"] == first["sold_at"]
 
 
+def test_duplicate_product_keeps_known_values() -> None:
+    """Un réimport avec des colonnes vides met à jour sans effacer l'existant."""
+    cleaned = clean_dataset(
+        {
+            "source": "csv",
+            "products": [
+                {
+                    "sku": "A",
+                    "name": "Produit A",
+                    "unit_cost": 100,
+                    "unit_price": 150,
+                    "stock_quantity": 20,
+                    "low_stock_threshold": 5,
+                },
+                {"sku": "a", "name": "", "unit_cost": "", "unit_price": 180},
+            ],
+        }
+    )
+
+    assert len(cleaned["products"]) == 1
+    product = cleaned["products"][0]
+    # la casse du catalogue ne se dégrade pas vers celle du fichier réimporté
+    assert product["sku"] == "A"
+    assert product["unit_price"] == 180.0
+    assert product["name"] == "Produit A"
+    assert product["unit_cost"] == 100.0
+    assert product["stock_quantity"] == 20.0
+
+
 def test_clean_dataset_survives_garbage_input() -> None:
     cleaned = clean_dataset({"source": "hacked", "products": "nope", "sales": [None, 42]})
     assert cleaned == {"source": "unknown", "products": [], "sales": []}

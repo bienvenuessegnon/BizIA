@@ -38,6 +38,8 @@ from ml.utils.frames import (
 
 KNOWN_SOURCES: tuple[str, ...] = ("manual", "csv", "excel")
 
+IDENTITY_COLUMNS = ["id", "sku"]
+
 DUPLICATE_SALE_COLUMNS = [
     "product_sku",
     "quantity",
@@ -76,7 +78,7 @@ def normalize_source(source: Any) -> SourceType:
 def clean_products(frame: pd.DataFrame) -> pd.DataFrame:
     frame = frame.loc[match_key(frame["sku"]).notna()].copy()
     frame["sku"] = frame["sku"].str.strip()
-    frame = frame.loc[~match_key(frame["sku"]).duplicated(keep="last")].copy()
+    frame = _merge_duplicate_products(frame)
 
     frame["name"] = frame["name"].fillna(frame["sku"])
     for column in ("unit_cost", "unit_price", "stock_quantity", "low_stock_threshold"):
@@ -102,6 +104,25 @@ def clean_sales(frame: pd.DataFrame, products: pd.DataFrame, source: str) -> pd.
     frame["channel"] = frame["channel"].fillna(source)
 
     return frame.sort_values("sold_at", kind="stable").reset_index(drop=True)
+
+
+def _merge_duplicate_products(frame: pd.DataFrame) -> pd.DataFrame:
+    """Fusionne les SKU en double champ par champ.
+
+    La dernière valeur *renseignée* gagne : un réimport avec une colonne vide
+    met à jour le reste sans effacer ce qu'on savait déjà du produit. Les champs
+    d'identité (`id`, `sku`) gardent au contraire leur première valeur, sinon un
+    fichier mal saisi renommerait un produit déjà connu.
+    """
+    keyed = frame.assign(_key=match_key(frame["sku"]))
+    if not keyed["_key"].duplicated().any():
+        return frame.reset_index(drop=True)
+
+    grouped = keyed.groupby("_key", sort=False)
+    merged = grouped.last()
+    for column in IDENTITY_COLUMNS:
+        merged[column] = grouped[column].first()
+    return merged.loc[:, PRODUCT_COLUMNS].reset_index(drop=True)
 
 
 def _catalog_map(products: pd.DataFrame, column: str) -> pd.Series:

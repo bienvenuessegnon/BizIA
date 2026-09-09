@@ -54,7 +54,7 @@ Le backend envoie des données déjà normalisées, mais le moteur reste défens
 | Cas | Traitement |
 | --- | --- |
 | Produit sans `sku` | ligne écartée |
-| SKU en double | fusionné, la dernière occurrence gagne |
+| SKU en double | fusionné champ par champ, la dernière valeur renseignée gagne (une colonne vide n’efface rien) |
 | `name` absent | reprend le `sku` |
 | Montant / stock absent ou négatif | ramené à 0 |
 | Vente sans `product_sku` ou sans quantité > 0 | ligne écartée |

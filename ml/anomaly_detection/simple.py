@@ -49,7 +49,7 @@ def _anomaly(period: Any, value: float, z_score: float, mean: float) -> dict[str
         "type": "revenue_spike" if is_spike else "revenue_drop",
         "period": str(period) if period is not None else "",
         "value": money(value),
-        "z_score": round(z_score, 2),
+        "z_score": round(float(z_score), 2),
         "severity": _severity(z_score),
         "message": (
             f"{label} de chiffre d'affaires le {period} : {format_amount(value)}, "
