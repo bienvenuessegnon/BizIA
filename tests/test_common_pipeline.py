@@ -4,8 +4,6 @@ Quand le moteur sera implémenté, une saisie manuelle et un import CSV portant 
 mêmes données doivent produire exactement les mêmes indicateurs.
 """
 
-import pytest
-
 from ml.pipeline import analyze
 
 PRODUCTS = [
@@ -36,7 +34,6 @@ def test_source_does_not_change_the_contract() -> None:
     assert manual.keys() == imported.keys()
 
 
-@pytest.mark.skip(reason="TODO(bienv): activer quand le moteur ML sera implémenté")
 def test_manual_and_csv_yield_same_kpis() -> None:
     manual = analyze({"source": "manual", "products": PRODUCTS, "sales": SALES})
     imported = analyze({"source": "csv", "products": PRODUCTS, "sales": SALES})
