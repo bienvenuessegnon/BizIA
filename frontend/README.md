@@ -1,35 +1,40 @@
-# Frontend — BizIA
+# Frontend — Imma
 
-Dossier de l’équipe **frontend**. Stack : React, Next.js (App Router), TypeScript.
+Stack : **Next.js 15 (App Router), React 19, TypeScript**.
 
-## Périmètre
-
-- Dashboard
-- Import de fichiers (UI)
-- Chat avec les données
-- Visualisations
-- Consultation des rapports, alertes et recommandations
-
-Le métier (calculs, ML, LLM) reste dans `backend/`.
-
-## Démarrer
+## Lancer
 
 ```bash
 cd frontend
 npm install
+cp .env.example .env.local   # NEXT_PUBLIC_API_URL=http://localhost:8000
 npm run dev
 ```
 
-L’app écoute sur [http://localhost:3000](http://localhost:3000).  
-L’API backend est attendue sur `http://localhost:8000` (voir `.env.example`).
+http://localhost:3000
 
 ## Structure
 
 ```
 frontend/
-  app/                 pages (accueil, dashboard, chat)
-  app/components/      composants UI (à remplir)
-  public/              assets statiques
+  src/app/             routes : accueil, produits, ventes, import, dashboard, chat
+  src/components/      UI réutilisable
+  src/services/        client API
+  src/hooks/
+  src/types/           types alignés sur le contrat
+  src/utils/
+  public/
 ```
 
-Contrats d’API : `shared/contrats/` et routes FastAPI dans `backend/`.
+## Périmètre Imma (MVP)
+
+- Navigation et page d’accueil
+- Formulaires produits / ventes
+- Import CSV/Excel
+- Dashboard, graphiques, indicateurs, alertes
+- Chatbot, chargements, erreurs
+- Consommation exclusive des APIs Uriel (`src/services/api.ts`)
+
+Ne pas implémenter de logique métier de calcul ici.
+
+Branche : `imma_frontend`.

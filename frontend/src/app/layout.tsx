@@ -4,8 +4,17 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "BizIA",
-  description: "Transformez vos données en décisions intelligentes.",
+  description: "Analyste de données IA autonome pour PME.",
 };
+
+const links = [
+  ["/", "Accueil"],
+  ["/produits", "Produits"],
+  ["/ventes", "Ventes"],
+  ["/import", "Import"],
+  ["/dashboard", "Dashboard"],
+  ["/chat", "Assistant"],
+] as const;
 
 export default function RootLayout({
   children,
@@ -17,9 +26,11 @@ export default function RootLayout({
       <body>
         <main>
           <nav>
-            <Link href="/">Accueil</Link>
-            <Link href="/dashboard">Dashboard</Link>
-            <Link href="/chat">Chat</Link>
+            {links.map(([href, label]) => (
+              <Link key={href} href={href}>
+                {label}
+              </Link>
+            ))}
           </nav>
           {children}
         </main>
