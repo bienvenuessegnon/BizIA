@@ -1,0 +1,145 @@
+openapi: 3.0.3
+info:
+  title: BizIA API
+  version: 0.2.0
+  description: Saisie manuelle et import CSV/Excel alimentent le même pipeline d'analyse.
+servers:
+  - url: http://localhost:8000
+paths:
+  /health:
+    get:
+      summary: Santé du backend
+      responses:
+        "200":
+          description: OK
+  /api/products:
+    get:
+      tags: [products]
+      summary: Lister les produits
+      responses:
+        "200":
+          description: Liste
+    post:
+      tags: [products]
+      summary: Créer ou mettre à jour un produit (SKU unique)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductIn"
+      responses:
+        "201":
+          description: Créé
+  /api/sales:
+    get:
+      tags: [sales]
+      summary: Lister les ventes
+      responses:
+        "200":
+          description: Liste
+    post:
+      tags: [sales]
+      summary: Enregistrer une vente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaleIn"
+      responses:
+        "201":
+          description: Créé
+        "404":
+          description: SKU inconnu
+  /api/ingestion/files:
+    post:
+      tags: [ingestion]
+      summary: Import CSV ou Excel vers le schéma commun
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Ingesté
+  /api/analysis/run:
+    post:
+      tags: [analysis]
+      summary: Exécuter le moteur ML unique
+      parameters:
+        - in: query
+          name: include_forecast
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: Résultat structuré
+  /api/analysis/summary:
+    get:
+      tags: [analysis]
+      summary: Dernière analyse
+      responses:
+        "200":
+          description: Résultat ou vide
+  /api/alerts:
+    get:
+      tags: [alerts]
+      summary: Alertes de la dernière analyse
+      responses:
+        "200":
+          description: Liste
+  /api/chat/messages:
+    post:
+      tags: [chat]
+      summary: Question ancrée sur l'analyse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message:
+                  type: string
+      responses:
+        "200":
+          description: Réponse
+  /api/reports/generate:
+    post:
+      tags: [reports]
+      summary: Rapport MVP (JSON)
+      responses:
+        "200":
+          description: Synthèse
+components:
+  schemas:
+    ProductIn:
+      type: object
+      required: [sku, name, unit_cost, unit_price]
+      properties:
+        sku: { type: string }
+        name: { type: string }
+        category: { type: string }
+        unit_cost: { type: number }
+        unit_price: { type: number }
+        stock_quantity: { type: number }
+        low_stock_threshold: { type: number }
+    SaleIn:
+      type: object
+      required: [product_sku, quantity, unit_price]
+      properties:
+        product_sku: { type: string }
+        quantity: { type: number }
+        unit_price: { type: number }
+        unit_cost: { type: number, nullable: true }
+        sold_at: { type: string, format: date-time, nullable: true }
+        channel: { type: string }

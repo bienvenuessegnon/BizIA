@@ -2,34 +2,27 @@
 
 ## Répartition
 
-| Dossier | Responsable | Contenu |
+| Dossier | Responsable | Branche |
 | --- | --- | --- |
-| `frontend/` | Frontend | Next.js, dashboard, chat, visualisations |
-| `backend/` | Backend, data, ML, IA | FastAPI, ingestion, analyse, LLM |
-| `features/` | Tous | Périmètre métier (quoi, pas comment) |
-| `shared/contrats/` | Tous | Contrats d’API et schémas d’échange |
-| `docs/` | Tous | Vision et règles d’équipe |
+| `frontend/` | Imma | `imma_frontend` |
+| `backend/` | Uriel | `uriel_backend` |
+| `ml/` | Farid | `farid_ml` |
+| `docs/`, `data/`, `tests/`, `shared/`, intégration | Bienv | `dev` |
+| `features/` | Tous | périmètre métier (quoi, pas comment) |
 
-Le frontend et le backend s’implémentent **chacun dans son dossier**. Les README sous `features/` décrivent le besoin ; ils ne remplacent pas le code.
-
-## Démarrer
-
-1. Frontend : lire [`frontend/README.md`](../frontend/README.md).
-2. Backend : lire [`backend/README.md`](../backend/README.md).
-3. Pour une capacité métier, lire `features/<nom>/README.md` puis coder dans `frontend/` et/ou `backend/` selon la couche.
+Le frontend et le backend s’implémentent **chacun dans son dossier**. Les README sous `features/` décrivent le besoin.
 
 ## Contrats
 
-Les échanges front ↔ back passent par des contrats décrits dans `shared/contrats/` (et les routes REST du backend). Éviter les couplages implicites.
-
-Flux métier :
+Échanges via `docs/api/` et `shared/contrats/`. Flux :
 
 ```
-ingestion → structuration → analyse
-                         → anomalies | tendances | predictions
-                         → visualisations | rapports | chatbot | decisions
+ingestion → normalisation → ml.analyze
+                         → dashboard | alertes | chatbot | rapport
 ```
+
+Saisie manuelle et import : **même pipeline**.
 
 ## Branches
 
-Une branche par sujet, par exemple `feat/frontend-dashboard` ou `feat/backend-ingestion`.
+Voir [development/git.md](development/git.md).

@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CanonicalDataset",
+  "type": "object",
+  "required": ["source", "products", "sales"],
+  "properties": {
+    "source": { "enum": ["manual", "csv", "excel", "unknown"] },
+    "products": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["sku", "name", "unit_cost", "unit_price", "stock_quantity"],
+        "properties": {
+          "id": { "type": "string" },
+          "sku": { "type": "string" },
+          "name": { "type": "string" },
+          "category": { "type": "string" },
+          "unit_cost": { "type": "number" },
+          "unit_price": { "type": "number" },
+          "stock_quantity": { "type": "number" },
+          "low_stock_threshold": { "type": "number" }
+        }
+      }
+    },
+    "sales": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["product_sku", "quantity", "unit_price", "sold_at"],
+        "properties": {
+          "id": { "type": "string" },
+          "product_sku": { "type": "string" },
+          "quantity": { "type": "number" },
+          "unit_price": { "type": "number" },
+          "unit_cost": { "type": "number" },
+          "sold_at": { "type": "string", "format": "date-time" },
+          "channel": { "type": "string" }
+        }
+      }
+    }
+  }
+}

@@ -1,6 +1,6 @@
 # Features
 
-Périmètre métier de chaque capacité. L’implémentation se fait dans `frontend/` et/ou `backend/`.
+Périmètre métier de chaque capacité. L’implémentation se fait dans `frontend/`, `backend/` et/ou `ml/`.
 
 | Feature | Front | Back |
 | --- | --- | --- |
