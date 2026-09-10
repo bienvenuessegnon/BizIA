@@ -306,6 +306,57 @@ def test_new_account_has_no_business_data(client: TestClient) -> None:
     assert client.get("/api/analysis/summary", headers=headers).json() == {"result": None}
 
 
+def test_import_csv_keeps_unit_price_and_revenue(client: TestClient) -> None:
+    """Scénario du rapport de bug : `sku,quantite,prix_unitaire,date`."""
+    client.post(
+        "/api/products",
+        json={
+            "sku": "Piment",
+            "name": "Piment",
+            "unit_cost": 150,
+            "unit_price": 250,
+            "stock_quantity": 20,
+        },
+    )
+
+    csv_content = "sku,quantite,prix_unitaire,date\nPiment,4,250,2026-09-01\n"
+    imported = client.post(
+        "/api/ingestion/files",
+        files={"file": ("ventes.csv", csv_content.encode("utf-8"), "text/csv")},
+    )
+    assert imported.status_code == 200
+    assert imported.json()["sales_ingested"] == 1
+
+    sales = client.get("/api/sales").json()["items"]
+    assert len(sales) == 1
+    assert sales[0]["unit_price"] == 250.0
+    assert sales[0]["quantity"] == 4.0
+
+    analysis = client.post("/api/analysis/run").json()["result"]
+    assert analysis["kpis"]["revenue"] == 1000.0
+
+
+def test_import_csv_without_price_column_uses_catalog(client: TestClient) -> None:
+    client.post(
+        "/api/products",
+        json={
+            "sku": "Piment",
+            "name": "Piment",
+            "unit_cost": 150,
+            "unit_price": 250,
+            "stock_quantity": 20,
+        },
+    )
+
+    csv_content = "sku,quantite,date\nPiment,4,2026-09-01\n"
+    imported = client.post(
+        "/api/ingestion/files",
+        files={"file": ("ventes.csv", csv_content.encode("utf-8"), "text/csv")},
+    )
+    assert imported.json()["sales_ingested"] == 1
+    assert client.get("/api/sales").json()["items"][0]["unit_price"] == 250.0
+
+
 def test_import_skips_unknown_sku(client: TestClient) -> None:
     from app.utils.settings import REPO_ROOT
 

@@ -95,6 +95,27 @@ def test_add_sale_fills_cost_sold_at_and_catalog_sku(tmp_path: Path) -> None:
     assert len(store.list_sales()) == 1
 
 
+def test_add_sale_falls_back_to_catalog_price(tmp_path: Path) -> None:
+    """Sans colonne de prix, le catalogue évite un CA nul."""
+    store = _store(tmp_path)
+    store.add_product(
+        {"sku": "PIMENT", "name": "Piment", "unit_cost": 150, "unit_price": 250, "stock_quantity": 10}
+    )
+    sale = store.add_sale({"product_sku": "PIMENT", "quantity": 4, "unit_price": None})
+    assert sale["unit_price"] == 250.0
+    assert sale["unit_cost"] == 150.0
+
+
+def test_add_sale_keeps_explicit_zero_price(tmp_path: Path) -> None:
+    """Un don reste à 0 : seul un prix absent est repris du catalogue."""
+    store = _store(tmp_path)
+    store.add_product(
+        {"sku": "PIMENT", "name": "Piment", "unit_cost": 150, "unit_price": 250, "stock_quantity": 10}
+    )
+    sale = store.add_sale({"product_sku": "PIMENT", "quantity": 4, "unit_price": 0})
+    assert sale["unit_price"] == 0.0
+
+
 def test_extend_dataset_merges_into_same_store(tmp_path: Path) -> None:
     store = _store(tmp_path)
     store.add_product(

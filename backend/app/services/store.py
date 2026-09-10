@@ -303,6 +303,12 @@ class JsonStore:
         if unit_cost is None or unit_cost == "":
             unit_cost = catalog["unit_cost"] if catalog is not None else 0.0
 
+        # Un fichier sans colonne de prix ne doit pas produire un CA nul :
+        # le catalogue fait référence, comme dans `ml.preprocessing.clean`.
+        unit_price = payload.get("unit_price")
+        if unit_price is None or unit_price == "":
+            unit_price = catalog["unit_price"] if catalog is not None else 0.0
+
         channel = payload.get("channel")
         if channel is not None:
             channel = str(channel).strip() or None
@@ -311,7 +317,7 @@ class JsonStore:
             "id": str(payload.get("id") or _new_id()),
             "product_sku": product_sku,
             "quantity": _as_float(payload.get("quantity"), 0.0),
-            "unit_price": _as_float(payload.get("unit_price"), 0.0),
+            "unit_price": _as_float(unit_price, 0.0),
             "unit_cost": _as_float(unit_cost, 0.0),
             "sold_at": _as_iso_utc(payload.get("sold_at")),
             "channel": channel,
