@@ -116,7 +116,7 @@ export function ImportPanel() {
     <AppPageLayout
       eyebrow="Données"
       title="Import & export"
-      description="Importez un CSV, un Excel, un PDF ou une photo de tableau. Les lignes sont normalisées vers le schéma commun, comme la saisie manuelle."
+      description="Importez un Excel, un CSV, un PDF ou une photo de votre tableau. BizIA en extrait vos produits et vos ventes, exactement comme si vous les aviez saisis à la main."
     >
       <div className="card card--glass import-zone">
         <div
@@ -182,7 +182,7 @@ export function ImportPanel() {
                 </Link>{" "}
                 ou{" "}
                 <Link href="/dashboard" className="alert__link">
-                  ouvrir le dashboard
+                  ouvrir le tableau de bord
                 </Link>
                 .
               </>
@@ -192,7 +192,7 @@ export function ImportPanel() {
 
         <div className="import-actions">
           <Button onClick={handleUpload} disabled={!file || uploading} loading={uploading}>
-            Lire et reconstruire le tableau
+            Lire le document
           </Button>
           {file && !uploading && (
             <Button variant="ghost" onClick={clearFile}>
@@ -221,8 +221,8 @@ export function ImportPanel() {
       <div className="card card--glass">
         <h2>Colonnes attendues</h2>
         <p className="muted">
-          Peu importe la casse, les accents ou une mention d&apos;unité : «&nbsp;Prix unitaire
-          (FCFA)&nbsp;» et <code>prix_unitaire</code> sont reconnus de la même façon.
+          Majuscules, accents ou unité entre parenthèses : peu importe, «&nbsp;Prix unitaire
+          (FCFA)&nbsp;» et «&nbsp;prix_unitaire&nbsp;» sont compris de la même façon.
         </p>
 
         <ColumnTable
@@ -234,13 +234,13 @@ export function ImportPanel() {
         <ColumnTable
           caption="Fichier de produits"
           columns={PRODUCT_COLUMNS}
-          note="Un SKU déjà présent est mis à jour plutôt que dupliqué."
+          note="Une référence déjà présente est mise à jour plutôt que dupliquée."
           onDownload={() => downloadCsvTemplate("bizia-modele-produits.csv", PRODUCT_TEMPLATE_CSV)}
         />
 
         <ul className="import-hints">
-          <li>Une vente dont le SKU n&apos;existe pas au catalogue est ignorée.</li>
-          <li>Extensions reconnues : {ACCEPTED_EXTENSIONS.map((e) => `.${e}`).join(", ")}</li>
+          <li>Une vente dont la référence produit n&apos;existe pas dans votre catalogue est ignorée.</li>
+          <li>Fichiers acceptés : {ACCEPTED_EXTENSIONS.map((e) => `.${e}`).join(", ")}</li>
         </ul>
       </div>
 
@@ -269,9 +269,9 @@ function ColumnTable({ caption, columns, note, onDownload }: ColumnTableProps) {
         <table className="data-table">
           <thead>
             <tr>
-              <th>Donnée</th>
-              <th>En-têtes acceptés</th>
-              <th>Requis</th>
+              <th>Information</th>
+              <th>Titres de colonne acceptés</th>
+              <th>Obligatoire</th>
             </tr>
           </thead>
           <tbody>

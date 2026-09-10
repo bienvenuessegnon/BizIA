@@ -18,9 +18,8 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export const API_IS_SAME_ORIGIN = API_URL === "";
 
-export const API_UNREACHABLE_MESSAGE = API_IS_SAME_ORIGIN
-  ? "Serveur momentanément indisponible. Réessayez dans un instant."
-  : `Serveur backend inaccessible. Démarrez-le sur ${API_URL}`;
+export const API_UNREACHABLE_MESSAGE =
+  "BizIA est momentanément injoignable. Réessayez dans un instant.";
 
 export class ApiError extends Error {
   code: "network" | "http";
@@ -113,7 +112,7 @@ export const api = {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
       } catch {
-        throw new ApiError("network", "Serveur backend inaccessible.");
+        throw new ApiError("network", API_UNREACHABLE_MESSAGE);
       }
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));

@@ -49,7 +49,7 @@ export function ProductsPanel() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!form.sku.trim() || !form.name.trim()) {
-      setError("Le SKU et le nom sont obligatoires.");
+      setError("La référence et le nom sont obligatoires.");
       return;
     }
 
@@ -78,7 +78,7 @@ export function ProductsPanel() {
     <AppPageLayout
       eyebrow="Catalogue"
       title="Produits"
-      description="Saisissez vos produits manuellement. Ils alimentent le même pipeline d'analyse que l'import."
+      description="Saisissez vos produits un par un. Ils sont analysés exactement comme ceux que vous importez depuis un fichier."
     >
       <div className="page-grid">
         <form className="card card--glass form-card" onSubmit={handleSubmit}>
@@ -89,7 +89,7 @@ export function ProductsPanel() {
 
           <Input
             name="sku"
-            label="SKU"
+            label="Référence"
             placeholder="HUILE-1L"
             value={form.sku}
             onChange={(e) => setForm((f) => ({ ...f, sku: e.target.value }))}
@@ -170,7 +170,7 @@ export function ProductsPanel() {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>SKU</th>
+                    <th>Référence</th>
                     <th>Nom</th>
                     <th>Catégorie</th>
                     <th>Prix</th>

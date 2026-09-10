@@ -30,7 +30,7 @@ const QUICK_ACTIONS: Array<{
 }> = [
   { href: "/produits", title: "Ajouter des produits", desc: "Saisie manuelle de votre catalogue", icon: "package" },
   { href: "/ventes", title: "Enregistrer des ventes", desc: "Suivez chaque transaction", icon: "coins" },
-  { href: "/import", title: "Importer un fichier", desc: "CSV, Excel, PDF ou image vers le store commun", icon: "upload" },
+  { href: "/import", title: "Importer un fichier", desc: "Excel, CSV, PDF ou photo de votre tableau", icon: "upload" },
   { href: "/chat", title: "Parler à l'assistant", desc: "Questions sur votre activité", icon: "bot" },
 ];
 
@@ -191,10 +191,10 @@ export function DashboardPanel() {
                 <div className="dashboard-empty__icon" aria-hidden="true">
                   <IconTrending size={48} />
                 </div>
-                <h2>{apiOffline ? "En attente du serveur" : "Prêt à analyser vos données"}</h2>
+                <h2>{apiOffline ? "Connexion en cours" : "Prêt à analyser vos données"}</h2>
                 <p className="muted">
                   {apiOffline
-                    ? "Le backend n'est pas démarré. Lancez l'API FastAPI, puis actualisez cette page ou importez vos fichiers."
+                    ? "Nous n'arrivons pas à joindre BizIA pour le moment. Patientez un instant, puis actualisez cette page."
                     : "Ajoutez des produits et des ventes, puis lancez l'analyse pour remplir ce tableau de bord."}
                 </p>
                 {!apiOffline && (

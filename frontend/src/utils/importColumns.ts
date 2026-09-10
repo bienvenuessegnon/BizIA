@@ -16,7 +16,7 @@ export type ColumnDoc = {
 export const SALE_COLUMNS: ColumnDoc[] = [
   {
     field: "product_sku",
-    label: "SKU du produit",
+    label: "Référence du produit",
     required: true,
     aliases: ["sku", "produit", "code_produit", "reference"],
   },
@@ -47,7 +47,7 @@ export const SALE_COLUMNS: ColumnDoc[] = [
 ];
 
 export const PRODUCT_COLUMNS: ColumnDoc[] = [
-  { field: "sku", label: "SKU", required: true, aliases: ["sku", "code", "reference"] },
+  { field: "sku", label: "Référence", required: true, aliases: ["sku", "code", "reference"] },
   { field: "name", label: "Nom", required: true, aliases: ["nom", "name", "designation"] },
   { field: "category", label: "Catégorie", required: false, aliases: ["categorie", "famille"] },
   {

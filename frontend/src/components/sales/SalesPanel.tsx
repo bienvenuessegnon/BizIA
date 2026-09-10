@@ -79,7 +79,7 @@ export function SalesPanel() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!form.product_sku.trim()) {
-      setError("Le SKU produit est obligatoire.");
+      setError("Choisissez le produit vendu.");
       return;
     }
 
@@ -114,7 +114,7 @@ export function SalesPanel() {
     <AppPageLayout
       eyebrow="Transactions"
       title="Ventes"
-      description="Enregistrez vos ventes manuellement. Chaque vente est liée à un SKU produit existant."
+      description="Enregistrez vos ventes une par une. Chaque vente est rattachée à un produit de votre catalogue."
     >
       <div className="page-grid">
         <form className="card card--glass form-card" onSubmit={handleSubmit}>

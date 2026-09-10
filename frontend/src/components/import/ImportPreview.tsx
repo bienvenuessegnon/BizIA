@@ -125,7 +125,7 @@ export function ImportPreview({
     }
     if (missingProductSku || invalidSale) {
       setError(
-        "Complétez les champs requis : SKU pour chaque produit, produit et quantité positive pour chaque vente."
+        "Complétez les champs obligatoires : une référence pour chaque produit, ainsi qu'un produit et une quantité supérieure à zéro pour chaque vente."
       );
       return;
     }
@@ -158,9 +158,9 @@ export function ImportPreview({
           <p className="eyebrow">Aperçu avant enregistrement</p>
           <h2>Tableau reconnu dans {preview.filename}</h2>
           <p className="muted">
-            {extractedLabel || "Aucune ligne"} reconstruite(s)
+            {extractedLabel || "Aucune ligne"} retrouvée(s)
             {preview.extraction_method === "gemini"
-              ? " par Gemini à partir du document complet."
+              ? " en lisant l'ensemble du document, y compris le texte rédigé."
               : " à partir des colonnes du fichier."}
           </p>
         </div>
@@ -168,8 +168,8 @@ export function ImportPreview({
           className={`extraction-badge extraction-badge--${preview.extraction_method}`}
         >
           {preview.extraction_method === "gemini"
-            ? "Reconnaissance Gemini"
-            : "Lecture structurée"}
+            ? "Lecture intelligente"
+            : "Lecture du tableau"}
         </span>
       </div>
 
@@ -242,7 +242,7 @@ export function ImportPreview({
         </Button>
       </div>
       <p className="import-preview__action-help muted">
-        « Enregistrer et analyser » ouvre directement le dashboard. « Enregistrer le
+        « Enregistrer et analyser » ouvre directement le tableau de bord. « Enregistrer le
         tableau » vous permet de poursuivre la saisie avant de lancer l&apos;analyse.
       </p>
     </div>
@@ -263,7 +263,7 @@ function EditableProducts({ rows, onChange, onRemove }: ProductTableProps) {
         <table className="data-table editable-import__table">
           <thead>
             <tr>
-              <th>SKU *</th>
+              <th>Référence *</th>
               <th>Nom</th>
               <th>Catégorie</th>
               <th>Coût</th>
@@ -331,7 +331,7 @@ function EditableSales({ rows, onChange, onRemove }: SaleTableProps) {
         <table className="data-table editable-import__table">
           <thead>
             <tr>
-              <th>Produit / SKU *</th>
+              <th>Produit / Référence *</th>
               <th>Quantité *</th>
               <th>Prix unitaire</th>
               <th>Coût unitaire</th>
