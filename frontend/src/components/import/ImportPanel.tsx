@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import { DocumentFormatIcon, IconUpload } from "@/components/icons/Icons";
 import { ExportPanel } from "@/components/import/ExportPanel";
@@ -16,17 +17,38 @@ import {
   isAcceptedDocument,
 } from "@/utils/fileFormats";
 import { getApiErrorMessage } from "@/utils/apiError";
+import {
+  PRODUCT_COLUMNS,
+  PRODUCT_TEMPLATE_CSV,
+  SALE_COLUMNS,
+  SALE_TEMPLATE_CSV,
+  downloadCsvTemplate,
+  type ColumnDoc,
+} from "@/utils/importColumns";
 
+function plural(count: number, singular: string, plural = `${singular}s`): string {
+  return `${count} ${count > 1 ? plural : singular}`;
+}
+
+/** Ne mentionne que ce qui s'est réellement passé, pour éviter les compteurs à zéro. */
 function describeImport(result: IngestionResult): string {
   const skippedUnknown = result.sales_skipped_unknown ?? 0;
   const skippedDuplicate = result.sales_skipped_duplicate ?? 0;
-  const parts = [
-    `${result.products_ingested} produit(s)`,
-    `${result.sales_ingested} vente(s) ajoutée(s)`,
-  ];
-  if (skippedUnknown) parts.push(`${skippedUnknown} vente(s) ignorée(s) (SKU inconnu)`);
-  if (skippedDuplicate) parts.push(`${skippedDuplicate} vente(s) déjà présentes`);
-  return `${result.filename} — ${parts.join(", ")}.`;
+  const added: string[] = [];
+  if (result.products_ingested) added.push(`${plural(result.products_ingested, "produit")} enregistré${result.products_ingested > 1 ? "s" : ""}`);
+  if (result.sales_ingested) added.push(`${plural(result.sales_ingested, "vente")} ajoutée${result.sales_ingested > 1 ? "s" : ""}`);
+
+  const ignored: string[] = [];
+  if (skippedUnknown) ignored.push(`${plural(skippedUnknown, "vente")} sans produit au catalogue`);
+  if (skippedDuplicate) ignored.push(`${plural(skippedDuplicate, "vente")} déjà présente${skippedDuplicate > 1 ? "s" : ""}`);
+
+  if (!added.length) {
+    return ignored.length
+      ? `Aucune ligne n'a été ajoutée : ${ignored.join(", ")}.`
+      : "Aucune ligne exploitable n'a été trouvée dans ce fichier.";
+  }
+  const summary = added.join(" et ");
+  return ignored.length ? `${summary}. Ignoré : ${ignored.join(", ")}.` : `${summary}.`;
 }
 
 export function ImportPanel() {
@@ -59,9 +81,14 @@ export function ImportPanel() {
     pickFile(e.dataTransfer.files?.[0] ?? null);
   }
 
+  function clearFile() {
+    setFile(null);
+    setError(null);
+    if (inputRef.current) inputRef.current.value = "";
+  }
+
   async function handleUpload() {
     if (!file) return;
-    if (!window.confirm(`Importer « ${file.name} » dans le store commun ?`)) return;
 
     setUploading(true);
     setError(null);
@@ -80,6 +107,7 @@ export function ImportPanel() {
   }
 
   const displayFormats = ["csv", "xlsx", "pdf", "png"] as const;
+  const addedRows = result ? result.products_ingested + result.sales_ingested : 0;
 
   return (
     <AppPageLayout
@@ -99,7 +127,13 @@ export function ImportPanel() {
           onClick={() => inputRef.current?.click()}
           role="button"
           tabIndex={0}
-          onKeyDown={(e) => e.key === "Enter" && inputRef.current?.click()}
+          aria-label="Choisir un fichier à importer"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              inputRef.current?.click();
+            }
+          }}
         >
           <input
             ref={inputRef}
@@ -135,8 +169,21 @@ export function ImportPanel() {
         {error && <Alert variant="error">{error}</Alert>}
 
         {result && (
-          <Alert variant="success" title="Fichier importé">
+          <Alert variant={addedRows ? "success" : "warning"} title={result.filename}>
             {describeImport(result)}
+            {addedRows > 0 && (
+              <>
+                {" "}
+                <Link href="/ventes" className="alert__link">
+                  Voir l&apos;historique des ventes
+                </Link>{" "}
+                ou{" "}
+                <Link href="/dashboard" className="alert__link">
+                  ouvrir le dashboard
+                </Link>
+                .
+              </>
+            )}
           </Alert>
         )}
 
@@ -144,16 +191,36 @@ export function ImportPanel() {
           <Button onClick={handleUpload} disabled={!file || uploading} loading={uploading}>
             Importer le fichier
           </Button>
+          {file && !uploading && (
+            <Button variant="ghost" onClick={clearFile}>
+              Retirer le fichier
+            </Button>
+          )}
           {uploading && <Spinner size="sm" label="Traitement en cours…" />}
         </div>
       </div>
 
       <div className="card card--glass">
-        <h2>Formats acceptés</h2>
+        <h2>Colonnes attendues</h2>
+        <p className="muted">
+          Peu importe la casse, les accents ou une mention d&apos;unité : «&nbsp;Prix unitaire
+          (FCFA)&nbsp;» et <code>prix_unitaire</code> sont reconnus de la même façon.
+        </p>
+
+        <ColumnTable
+          caption="Fichier de ventes"
+          columns={SALE_COLUMNS}
+          note="Sans colonne de prix, BizIA reprend le prix de vente du catalogue."
+          onDownload={() => downloadCsvTemplate("bizia-modele-ventes.csv", SALE_TEMPLATE_CSV)}
+        />
+        <ColumnTable
+          caption="Fichier de produits"
+          columns={PRODUCT_COLUMNS}
+          note="Un SKU déjà présent est mis à jour plutôt que dupliqué."
+          onDownload={() => downloadCsvTemplate("bizia-modele-produits.csv", PRODUCT_TEMPLATE_CSV)}
+        />
+
         <ul className="import-hints">
-          <li>
-            <strong>Fichiers :</strong> CSV, Excel (.xlsx, .xls), PDF (tableau) et images (PNG, JPEG, WebP)
-          </li>
           <li>Une vente dont le SKU n&apos;existe pas au catalogue est ignorée.</li>
           <li>Extensions reconnues : {ACCEPTED_EXTENSIONS.map((e) => `.${e}`).join(", ")}</li>
         </ul>
@@ -161,5 +228,56 @@ export function ImportPanel() {
 
       <ExportPanel />
     </AppPageLayout>
+  );
+}
+
+type ColumnTableProps = {
+  caption: string;
+  columns: ColumnDoc[];
+  note: string;
+  onDownload: () => void;
+};
+
+function ColumnTable({ caption, columns, note, onDownload }: ColumnTableProps) {
+  return (
+    <section className="column-guide">
+      <div className="column-guide__head">
+        <h3>{caption}</h3>
+        <Button variant="ghost" onClick={onDownload}>
+          Télécharger le modèle CSV
+        </Button>
+      </div>
+      <div className="table-wrap">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Donnée</th>
+              <th>En-têtes acceptés</th>
+              <th>Requis</th>
+            </tr>
+          </thead>
+          <tbody>
+            {columns.map((column) => (
+              <tr key={column.field}>
+                <td>{column.label}</td>
+                <td className="column-guide__aliases">
+                  {column.aliases.map((alias) => (
+                    <code key={alias}>{alias}</code>
+                  ))}
+                </td>
+                <td>
+                  {column.required ? (
+                    <span className="table-tag table-tag--warn">Oui</span>
+                  ) : (
+                    <span className="muted">Optionnel</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="muted">{note}</p>
+    </section>
   );
 }
