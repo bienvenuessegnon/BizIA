@@ -24,7 +24,7 @@ _SALE_ROWS = [
 
 def _write_table_pdf(path: Path, rows: list[list[str]]) -> None:
     document = SimpleDocTemplate(str(path), pagesize=A4)
-    table = Table(rows)
+    table = Table(rows, repeatRows=1)
     table.setStyle(
         TableStyle(
             [
@@ -111,6 +111,43 @@ def test_parse_sales_pdf(tmp_path: Path) -> None:
     assert sales[0]["product_sku"] == "HUILE-1L"
     assert int(float(sales[0]["quantity"])) == 3
     assert sales[0]["channel"] == "pdf"
+
+
+def test_parse_sales_pdf_over_several_pages(tmp_path: Path) -> None:
+    """Un tableau coupé par un saut de page garde toutes ses lignes."""
+    rows = [_SALE_ROWS[0]] + [
+        ["HUILE-1L", "1", "1500", f"2026-08-{day:02d}"] for day in range(1, 32)
+    ] * 3
+    path = tmp_path / "ventes-longues.pdf"
+    _write_table_pdf(path, rows)
+
+    products, sales = parse_tabular(str(path), "ventes-longues.pdf")
+    assert products == []
+    assert len(sales) == len(rows) - 1
+
+
+def test_parse_sample_sales_pdf() -> None:
+    products, sales = parse_tabular(str(SAMPLES / "ventes.pdf"), "ventes.pdf")
+    assert products == []
+    assert len(sales) == 16
+
+
+def test_parse_sample_products_pdf() -> None:
+    products, sales = parse_tabular(str(SAMPLES / "produits.pdf"), "produits.pdf")
+    assert sales == []
+    assert [item["sku"] for item in products] == [
+        "HUILE-1L",
+        "RIZ-5KG",
+        "SAVON",
+        "EAU-15L",
+        "PAIN",
+    ]
+
+
+def test_parse_sample_products_excel() -> None:
+    products, sales = parse_tabular(str(SAMPLES / "produits.xlsx"), "produits.xlsx")
+    assert sales == []
+    assert len(products) == 5
 
 
 def test_parse_products_image(tmp_path: Path) -> None:

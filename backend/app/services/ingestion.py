@@ -10,6 +10,7 @@ import csv
 import io
 import re
 import unicodedata
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
@@ -185,26 +186,43 @@ def _read_pdf(path: str) -> pd.DataFrame:
             "Le PDF n'a pas pu être lu. Vérifiez qu'il n'est pas corrompu.",
         ) from exc
 
-    for table in tables:
-        frame = _rows_to_frame(table)
-        if frame is not None and _detect_kind([str(c) for c in frame.columns]):
-            return frame
+    merged = _merge_frames(_rows_to_frame(table) for table in tables)
+    if merged is not None:
+        return merged
 
-    joined = "\n".join(texts)
-    frame = _text_to_frame(joined)
+    frame = _text_to_frame("\n".join(texts))
     if frame is not None and _detect_kind([str(c) for c in frame.columns]):
         return frame
 
-    for image in _render_pdf_pages(path):
-        frame = _ocr_image_to_frame(image)
-        if frame is not None and _detect_kind([str(c) for c in frame.columns]):
-            return frame
+    merged = _merge_frames(_ocr_image_to_frame(image) for image in _render_pdf_pages(path))
+    if merged is not None:
+        return merged
 
     raise IngestionError(
         422,
         "unknown_schema",
         "Aucun tableau de produits ou de ventes n'a été reconnu dans le PDF.",
     )
+
+
+def _merge_frames(candidates: Iterable[pd.DataFrame | None]) -> pd.DataFrame | None:
+    """Un tableau coupé sur plusieurs pages ne doit pas perdre ses lignes.
+
+    Les pages suivantes ne sont reprises que si elles portent les mêmes colonnes,
+    ce qui écarte au passage un second tableau sans rapport.
+    """
+    kept: list[pd.DataFrame] = []
+    for frame in candidates:
+        if frame is None or not _detect_kind([str(column) for column in frame.columns]):
+            continue
+        if kept and list(kept[0].columns) != list(frame.columns):
+            continue
+        kept.append(frame)
+    if not kept:
+        return None
+    if len(kept) == 1:
+        return kept[0]
+    return pd.concat(kept, ignore_index=True)
 
 
 def _read_image(path: str) -> pd.DataFrame:
