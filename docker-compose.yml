@@ -1,14 +1,13 @@
+## Un seul conteneur, comme sur Render : l'API sert aussi le site exporté.
 services:
-  backend:
+  bizia:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
     environment:
-      API_HOST: 0.0.0.0
-      API_PORT: 8000
-      CORS_ORIGINS: http://localhost:3000
+      CORS_ORIGINS: "*"
       PYTHONPATH: /repo
       DATA_DIR: /repo/data
       UPLOAD_DIR: /repo/data/uploads
@@ -20,15 +19,3 @@ services:
       interval: 10s
       timeout: 3s
       retries: 5
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        NEXT_PUBLIC_API_URL: http://localhost:8000
-    ports:
-      - "3000:3000"
-    depends_on:
-      backend:
-        condition: service_healthy

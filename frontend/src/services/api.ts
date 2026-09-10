@@ -5,7 +5,14 @@
 import type { Alert, AnalysisResult, ChatReply, IngestionResult, Product, Sale } from "@/types";
 import { getStoredSession } from "@/services/auth";
 
+// Vide quand l'API et le site partagent la même origine (déploiement en un service).
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+export const API_IS_SAME_ORIGIN = API_URL === "";
+
+export const API_UNREACHABLE_MESSAGE = API_IS_SAME_ORIGIN
+  ? "Serveur momentanément indisponible. Réessayez dans un instant."
+  : `Serveur backend inaccessible. Démarrez-le sur ${API_URL}`;
 
 export class ApiError extends Error {
   code: "network" | "http";
@@ -30,10 +37,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       },
     });
   } catch {
-    throw new ApiError(
-      "network",
-      "Serveur backend inaccessible. Démarrez-le sur http://localhost:8000",
-    );
+    throw new ApiError("network", API_UNREACHABLE_MESSAGE);
   }
 
   const data = await response.json().catch(() => ({}));

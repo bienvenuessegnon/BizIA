@@ -9,30 +9,33 @@
 
 Python 3.12 et Node 22 sont les versions de référence de cet environnement.
 
-## Render (sans clé)
+## Render (un seul service, sans clé)
 
-Le fichier `render.yaml` déploie l’API et le front. Connexion par e-mail + mot de passe, pas de Google.
+Le `Dockerfile` de la racine construit le site Next.js en statique puis le fait servir par
+l’API : **une seule URL** pour le site et pour `/api`. Pas de CORS, pas de seconde adresse.
+Connexion par e-mail + mot de passe, pas de Google.
 
 1. Sur Render : **New** → **Blueprint** → ce dépôt, branche `dev`.
-2. Deux services : `bizia-api` (Python) et `bizia-web` (Node).
+2. Un service : `bizia` (langage **Docker**).
 3. Aucune clé à coller. Les comptes JSON sont **éphémères** (un redéploiement les efface).
 
-Si un service est créé à la main plutôt que par le Blueprint, choisir **Python** pour l’API
-et **Node** pour le front. Avec le langage **Docker**, Render construit le `Dockerfile` de la
-racine, qui ne contient que l’API.
+Ce que sert ce service :
 
-**BizIA a besoin de deux services.** L’API ne sert pas l’interface : sa racine `/` renvoie
-seulement un repère JSON, la documentation vit sur `/docs`. Le site est le service Node.
-
-Créer le front à la main :
-
-| Champ | Valeur |
+| Chemin | Contenu |
 | --- | --- |
-| Language | Node |
-| Root Directory | `frontend` |
-| Build Command | `npm ci && npm run build` |
-| Start Command | `npm start -- --hostname 0.0.0.0 --port $PORT` |
-| `NEXT_PUBLIC_API_URL` | l’URL publique de l’API, par exemple `https://biziao.onrender.com` |
+| `/` | le site (accueil, produits, ventes, import, dashboard, assistant) |
+| `/api/...` | l’API |
+| `/health` | sonde utilisée par Render |
+| `/docs` | documentation OpenAPI |
 
-`NEXT_PUBLIC_API_URL` est figée pendant le build : après un changement d’URL d’API, relancer
-un déploiement du front.
+Créé à la main plutôt que par le Blueprint : choisir **Docker**, laisser le chemin du
+Dockerfile par défaut (`./Dockerfile`) et le contexte à la racine du dépôt.
+
+Le même conteneur tourne en local : `docker compose up --build`, puis http://localhost:8000.
+
+### Déployer le front séparément (optionnel)
+
+Le mode serveur de Next.js reste disponible : sans `NEXT_OUTPUT=export`, `npm run build`
+puis `npm start` fonctionnent comme avant. Il faut alors renseigner `NEXT_PUBLIC_API_URL`
+avec l’URL publique de l’API — cette variable est figée au build, donc un changement d’URL
+impose un nouveau déploiement.

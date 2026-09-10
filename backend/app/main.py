@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api.router import api_router
 from app.utils.errors import ApiError
@@ -49,17 +50,26 @@ async def validation_error_handler(_request: Request, exc: RequestValidationErro
     )
 
 
-@app.get("/")
-def root() -> dict[str, str]:
-    """L'interface est un service séparé : la racine de l'API sert de repère."""
-    return {
-        "service": "bizia-backend",
-        "message": "API BizIA. L'interface web est déployée séparément.",
-        "docs": "/docs",
-        "health": "/health",
-    }
-
-
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok", "service": "bizia-backend"}
+
+
+_web_dist = settings.resolve(settings.web_dist)
+
+if _web_dist.is_dir():
+    # Un seul service : l'interface exportée est servie sur la même origine que
+    # l'API, donc le frontend appelle `/api/...` sans CORS. Monté en dernier
+    # pour ne pas masquer /api, /health et /docs.
+    app.mount("/", StaticFiles(directory=_web_dist, html=True), name="web")
+else:
+
+    @app.get("/")
+    def root() -> dict[str, str]:
+        """Sans interface embarquée, la racine sert de repère vers l'API."""
+        return {
+            "service": "bizia-backend",
+            "message": "API BizIA. L'interface web n'est pas embarquée dans ce service.",
+            "docs": "/docs",
+            "health": "/health",
+        }

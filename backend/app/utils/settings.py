@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     database_path: str = "data/local/bizia.json"
     llm_provider: str = "none"
     default_low_stock_threshold: float = 5
+    web_dist: str = "frontend/out"
 
     @property
     def cors_origin_list(self) -> list[str]:

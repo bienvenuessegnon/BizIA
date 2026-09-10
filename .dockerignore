@@ -1,0 +1,9 @@
+.git
+**/__pycache__
+.pytest_cache
+.venv
+frontend/node_modules
+frontend/.next
+frontend/out
+data/local
+data/uploads

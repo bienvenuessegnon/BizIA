@@ -12,10 +12,10 @@ def test_health(client: TestClient) -> None:
     assert response.json()["status"] == "ok"
 
 
-def test_root_points_to_docs(client: TestClient) -> None:
+def test_root_is_served(client: TestClient) -> None:
+    """Site exporté quand il est embarqué, repère JSON vers /docs sinon."""
     response = client.get("/")
     assert response.status_code == 200
-    assert response.json()["docs"] == "/docs"
 
 
 def test_contract_routes_exist(client: TestClient) -> None:

@@ -1,35 +1,17 @@
-# Déploiement Render : API + frontend, sans clé OAuth / Gemini.
+# Déploiement Render : un seul service qui sert le site et l'API.
 # New → Blueprint → ce dépôt → branche `dev`.
 services:
   - type: web
-    name: bizia-api
-    runtime: python
+    name: bizia
+    runtime: docker
     branch: dev
-    buildCommand: pip install -r backend/requirements.txt
-    startCommand: PYTHONPATH=backend:. uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     healthCheckPath: /health
     envVars:
-      - key: PYTHON_VERSION
-        value: "3.12.3"
       - key: CORS_ORIGINS
         value: "*"
       - key: DATABASE_PATH
         value: data/local/bizia.json
       - key: LLM_PROVIDER
         value: none
-
-  - type: web
-    name: bizia-web
-    runtime: node
-    branch: dev
-    rootDir: frontend
-    buildCommand: npm ci && npm run build
-    startCommand: npm start -- --hostname 0.0.0.0 --port $PORT
-    envVars:
-      - key: NODE_VERSION
-        value: "22.12.0"
-      - key: NEXT_PUBLIC_API_URL
-        fromService:
-          name: bizia-api
-          type: web
-          envVarKey: RENDER_EXTERNAL_URL

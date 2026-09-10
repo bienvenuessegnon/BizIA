@@ -1,11 +1,11 @@
-import { ApiError } from "@/services/api";
+import { ApiError, API_UNREACHABLE_MESSAGE } from "@/services/api";
 
 export function getApiErrorMessage(err: unknown): string {
   if (err instanceof ApiError) {
     return err.message;
   }
   if (err instanceof TypeError || (err instanceof Error && err.message === "Failed to fetch")) {
-    return "Serveur backend inaccessible. Démarrez-le sur http://localhost:8000";
+    return API_UNREACHABLE_MESSAGE;
   }
   if (err instanceof Error) {
     return err.message;

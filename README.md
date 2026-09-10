@@ -56,7 +56,7 @@ Frontend (Next.js) → API FastAPI → normalisation → ml.analyze() → API �
 | Backend | Python 3.12, FastAPI | Déjà présent ; OpenAPI auto (`/docs`) |
 | ML | pandas, numpy, scikit-learn | Déjà dans `backend/requirements.txt`, extrait dans `ml/` |
 | Persistance MVP | JSON fichier (`data/local/`) | Zéro infra (pas de Postgres pour le hackathon) |
-| Conteneurs | Docker Compose (optionnel) | Lancer front + back ensemble |
+| Conteneurs | Docker (`Dockerfile` racine) | Un service unique sert le site et l’API |
 
 ## Structure
 
@@ -134,6 +134,9 @@ pytest ml/tests -q
 ```
 
 ### Docker (optionnel)
+
+Un seul conteneur, comme en production : le site exporté est servi par l’API sur
+http://localhost:8000.
 
 ```bash
 docker compose up --build
@@ -226,7 +229,7 @@ Chaque squelette porte un commentaire `TODO(<prénom>)` à l’endroit exact où
 ## Documentation
 
 - [docs/architecture/pipeline.md](docs/architecture/pipeline.md)
-- [docs/development/setup.md](docs/development/setup.md) — local et **Render** (blueprint `render.yaml`)
+- [docs/development/setup.md](docs/development/setup.md) — local et **Render** (un service, `render.yaml`)
 - [docs/presentation/](docs/presentation/) — documents de référence équipe
 - [docs/vision.md](docs/vision.md) · [docs/conventions.md](docs/conventions.md)
 
