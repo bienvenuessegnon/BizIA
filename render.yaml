@@ -1,10 +1,11 @@
 # Déploiement Render : API + frontend, sans clé OAuth / Gemini.
-# New → Blueprint → ce dépôt.
+# New → Blueprint → ce dépôt → branche `dev`.
 services:
   - type: web
     name: bizia-api
     runtime: python
     pythonVersion: "3.12.3"
+    branch: dev
     buildCommand: pip install -r backend/requirements.txt
     startCommand: PYTHONPATH=backend:. uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
@@ -13,12 +14,15 @@ services:
         value: "*"
       - key: DATABASE_PATH
         value: data/local/bizia.json
+      - key: LLM_PROVIDER
+        value: none
 
   - type: web
     name: bizia-web
     runtime: node
+    branch: dev
     buildCommand: npm ci --prefix frontend && npm run build --prefix frontend
-    startCommand: npm start --prefix frontend
+    startCommand: npm run start --prefix frontend -- --hostname 0.0.0.0 --port $PORT
     envVars:
       - key: NODE_VERSION
         value: "22.12.0"

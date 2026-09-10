@@ -226,7 +226,7 @@ Chaque squelette porte un commentaire `TODO(<prénom>)` à l’endroit exact où
 ## Documentation
 
 - [docs/architecture/pipeline.md](docs/architecture/pipeline.md)
-- [docs/development/setup.md](docs/development/setup.md)
+- [docs/development/setup.md](docs/development/setup.md) — local et **Render** (blueprint `render.yaml`)
 - [docs/presentation/](docs/presentation/) — documents de référence équipe
 - [docs/vision.md](docs/vision.md) · [docs/conventions.md](docs/conventions.md)
 
