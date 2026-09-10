@@ -35,7 +35,7 @@ from ml.utils.frames import (
     sales_frame,
 )
 
-KNOWN_SOURCES: tuple[str, ...] = ("manual", "csv", "excel")
+KNOWN_SOURCES: tuple[str, ...] = ("manual", "csv", "excel", "pdf", "image")
 STABLE_UNKNOWN_SOLD_AT = pd.Timestamp("1970-01-01T00:00:00+00:00")
 
 IDENTITY_COLUMNS = ["id", "sku"]

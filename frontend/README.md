@@ -30,7 +30,7 @@ frontend/
 
 - Navigation et page d’accueil
 - Formulaires produits / ventes
-- Import CSV/Excel
+- Import CSV, Excel, PDF et images
 - Dashboard, graphiques, indicateurs, alertes
 - Chatbot, chargements, erreurs
 - Consommation exclusive des APIs Uriel (`src/services/api.ts`)

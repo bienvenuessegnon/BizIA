@@ -143,12 +143,27 @@ export function IconFilePowerpoint({ className, size }: IconProps) {
   );
 }
 
+export function IconFileImage({ className, size }: IconProps) {
+  return (
+    <Svg className={className} size={size}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6" />
+      <rect x="8" y="12" width="8" height="6" rx="1" />
+      <circle cx="10" cy="14" r="0.8" />
+    </Svg>
+  );
+}
+
 export function DocumentFormatIcon({
   format,
   className,
   size,
 }: IconProps & { format: DocumentFormat }) {
   if (format === "csv") return <IconFileCsv className={className} size={size} />;
+  if (format === "pdf") return <IconFilePdf className={className} size={size} />;
+  if (format === "png" || format === "jpg" || format === "jpeg" || format === "webp") {
+    return <IconFileImage className={className} size={size} />;
+  }
   return <IconFileExcel className={className} size={size} />;
 }
 

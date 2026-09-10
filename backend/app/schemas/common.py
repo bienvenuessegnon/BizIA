@@ -3,7 +3,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-SourceType = Literal["manual", "csv", "excel", "unknown"]
+SourceType = Literal["manual", "csv", "excel", "pdf", "image", "unknown"]
 
 
 class ProductIn(BaseModel):

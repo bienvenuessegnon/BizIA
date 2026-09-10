@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: BizIA API
   version: 0.2.0
-  description: Saisie manuelle et import CSV/Excel alimentent le même pipeline d'analyse.
+  description: Saisie manuelle et import CSV/Excel/PDF/image alimentent le même pipeline d'analyse.
 servers:
   - url: http://localhost:8000
 paths:
@@ -55,7 +55,7 @@ paths:
   /api/ingestion/files:
     post:
       tags: [ingestion]
-      summary: Import CSV ou Excel vers le schéma commun
+      summary: Import CSV, Excel, PDF ou image vers le schéma commun
       requestBody:
         required: true
         content:

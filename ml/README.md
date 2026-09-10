@@ -2,7 +2,7 @@
 
 Package Python importable : `ml.pipeline.analyze(dataset) -> dict`.
 
-Le moteur **ignore la source** (`manual`, `csv`, `excel`). Il ne voit qu’un schéma commun : `products[]` + `sales[]`.
+Le moteur **ignore la source** (`manual`, `csv`, `excel`, `pdf`, `image`). Il ne voit qu’un schéma commun : `products[]` + `sales[]`.
 
 ## Lancer / tester
 

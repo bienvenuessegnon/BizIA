@@ -163,7 +163,7 @@ export function ProductsPanel() {
           ) : items.length === 0 ? (
             <EmptyState
               title="Aucun produit"
-              description="Ajoutez votre premier produit ou importez un CSV / Excel."
+              description="Ajoutez votre premier produit ou importez un CSV, Excel, PDF ou une image."
             />
           ) : (
             <div className="table-wrap">

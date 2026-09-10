@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Literal, TypedDict
 
 
-SourceType = Literal["manual", "csv", "excel", "unknown"]
+SourceType = Literal["manual", "csv", "excel", "pdf", "image", "unknown"]
 
 
 class ProductRecord(TypedDict, total=False):

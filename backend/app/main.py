@@ -11,7 +11,7 @@ app = FastAPI(
     title="BizIA API",
     description=(
         "Analyste de données IA pour PME. "
-        "Saisie manuelle et import CSV/Excel alimentent le même pipeline d'analyse."
+        "Saisie manuelle et import CSV/Excel/PDF/image alimentent le même pipeline d'analyse."
     ),
     version="0.2.0",
 )

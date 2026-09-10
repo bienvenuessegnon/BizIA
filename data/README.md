@@ -8,7 +8,7 @@
 
 ## Principe
 
-Les fichiers d’exemple, la saisie manuelle et les imports CSV/Excel sont **normalisés vers le même schéma** (`docs/api/`) avant analyse.
+Les fichiers d’exemple, la saisie manuelle et les imports CSV/Excel/PDF/image sont **normalisés vers le même schéma** (`docs/api/`) avant analyse.
 
 ## Charger les échantillons
 

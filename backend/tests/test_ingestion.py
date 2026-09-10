@@ -1,12 +1,55 @@
 from pathlib import Path
 
 import pytest
-from fastapi.testclient import TestClient
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 
 from app.services.ingestion import IngestionError, parse_tabular
 from app.utils.settings import REPO_ROOT
 
 SAMPLES = REPO_ROOT / "data" / "samples"
+
+_PRODUCT_ROWS = [
+    ["sku", "name", "category", "unit_price", "stock_quantity"],
+    ["HUILE-1L", "Huile 1L", "Epicerie", "1500", "4"],
+    ["RIZ-5KG", "Riz 5kg", "Epicerie", "3000", "18"],
+]
+
+_SALE_ROWS = [
+    ["sku", "qte", "prix", "date"],
+    ["HUILE-1L", "3", "1500", "2026-08-25T09:00:00+00:00"],
+]
+
+
+def _write_table_pdf(path: Path, rows: list[list[str]]) -> None:
+    document = SimpleDocTemplate(str(path), pagesize=A4)
+    table = Table(rows)
+    table.setStyle(
+        TableStyle(
+            [
+                ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+                ("FONTSIZE", (0, 0), (-1, -1), 11),
+                ("GRID", (0, 0), (-1, -1), 0.4, colors.black),
+                ("BACKGROUND", (0, 0), (-1, 0), colors.Color(0.9, 0.9, 0.9)),
+                ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+                ("TOPPADDING", (0, 0), (-1, -1), 6),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+            ]
+        )
+    )
+    document.build([table])
+
+
+def _pdf_first_page_png(pdf_path: Path, png_path: Path) -> None:
+    import pypdfium2 as pdfium
+
+    document = pdfium.PdfDocument(str(pdf_path))
+    try:
+        document[0].render(scale=2).to_pil().convert("RGB").save(png_path)
+    finally:
+        document.close()
 
 
 def test_parse_sample_products() -> None:
@@ -43,12 +86,49 @@ def test_french_aliases(tmp_path: Path) -> None:
 
 
 def test_unsupported_type(tmp_path: Path) -> None:
-    path = tmp_path / "notes.pdf"
-    path.write_bytes(b"%PDF")
+    path = tmp_path / "notes.docx"
+    path.write_bytes(b"PK")
     with pytest.raises(IngestionError) as error:
-        parse_tabular(str(path), "notes.pdf")
+        parse_tabular(str(path), "notes.docx")
     assert error.value.code == "unsupported_type"
     assert error.value.status_code == 415
+
+
+def test_parse_products_pdf(tmp_path: Path) -> None:
+    path = tmp_path / "produits.pdf"
+    _write_table_pdf(path, _PRODUCT_ROWS)
+    products, sales = parse_tabular(str(path), "produits.pdf")
+    assert sales == []
+    assert [item["sku"] for item in products] == ["HUILE-1L", "RIZ-5KG"]
+    assert products[0]["unit_price"] == 1500 or float(products[0]["unit_price"]) == 1500.0
+
+
+def test_parse_sales_pdf(tmp_path: Path) -> None:
+    path = tmp_path / "ventes.pdf"
+    _write_table_pdf(path, _SALE_ROWS)
+    products, sales = parse_tabular(str(path), "ventes.pdf")
+    assert products == []
+    assert sales[0]["product_sku"] == "HUILE-1L"
+    assert int(float(sales[0]["quantity"])) == 3
+    assert sales[0]["channel"] == "pdf"
+
+
+def test_parse_products_image(tmp_path: Path) -> None:
+    pdf_path = tmp_path / "produits.pdf"
+    png_path = tmp_path / "produits.png"
+    _write_table_pdf(pdf_path, _PRODUCT_ROWS)
+    _pdf_first_page_png(pdf_path, png_path)
+    products, sales = parse_tabular(str(png_path), "produits.png")
+    assert sales == []
+    assert any(item["sku"] == "HUILE-1L" for item in products)
+
+
+def test_unreadable_pdf(tmp_path: Path) -> None:
+    path = tmp_path / "notes.pdf"
+    path.write_bytes(b"%PDF-fake")
+    with pytest.raises(IngestionError) as error:
+        parse_tabular(str(path), "notes.pdf")
+    assert error.value.status_code in {400, 422}
 
 
 def test_unknown_schema(tmp_path: Path) -> None:

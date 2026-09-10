@@ -30,7 +30,7 @@ const QUICK_ACTIONS: Array<{
 }> = [
   { href: "/produits", title: "Ajouter des produits", desc: "Saisie manuelle de votre catalogue", icon: "package" },
   { href: "/ventes", title: "Enregistrer des ventes", desc: "Suivez chaque transaction", icon: "coins" },
-  { href: "/import", title: "Importer un fichier", desc: "CSV ou Excel vers le store commun", icon: "upload" },
+  { href: "/import", title: "Importer un fichier", desc: "CSV, Excel, PDF ou image vers le store commun", icon: "upload" },
   { href: "/chat", title: "Parler à l'assistant", desc: "Questions sur votre activité", icon: "bot" },
 ];
 

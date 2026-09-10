@@ -4,7 +4,7 @@
   "type": "object",
   "required": ["source", "products", "sales"],
   "properties": {
-    "source": { "enum": ["manual", "csv", "excel", "unknown"] },
+    "source": { "enum": ["manual", "csv", "excel", "pdf", "image", "unknown"] },
     "products": {
       "type": "array",
       "items": {

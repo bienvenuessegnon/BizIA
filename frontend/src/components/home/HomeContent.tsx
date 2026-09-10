@@ -6,13 +6,13 @@ import { IconCheck } from "@/components/icons/IconCheck";
 import { useAuth } from "@/contexts/AuthContext";
 
 const FEATURES = [
-  "Importez un CSV ou un Excel — même pipeline que la saisie manuelle",
+  "Importez un CSV, Excel, PDF ou une image — même pipeline que la saisie manuelle",
   "Tableaux de bord, alertes et classements calculés par le moteur",
   "Assistant IA ancré sur la dernière analyse",
 ];
 
 const STATS = [
-  { value: "CSV / Excel", label: "formats d'import du MVP" },
+  { value: "CSV / PDF / photo", label: "formats d'import du MVP" },
   { value: "1 pipeline", label: "saisie et import partagent le store" },
   { value: "PDF / Word", label: "rapports prêts à partager" },
 ];
@@ -21,7 +21,7 @@ const STEPS = [
   {
     n: 1,
     title: "Importez ou saisissez",
-    desc: "Catalogue et ventes en CSV/Excel, ou via les formulaires Produits et Ventes.",
+    desc: "Catalogue et ventes en CSV, Excel, PDF ou photo de tableau, ou via les formulaires Produits et Ventes.",
   },
   {
     n: 2,
@@ -57,7 +57,7 @@ export function HomeContent() {
             </h1>
 
             <p className="landing-hero__subtitle">
-              BizIA transforme vos ventes et stocks (CSV, Excel ou saisie) en indicateurs, alertes
+              BizIA transforme vos ventes et stocks (CSV, Excel, PDF, image ou saisie) en indicateurs, alertes
               et recommandations — avec un assistant ancré sur votre dernière analyse.
             </p>
 
@@ -83,7 +83,7 @@ export function HomeContent() {
                     Accéder au tableau de bord →
                   </Link>
                   <Link href="/import" className="btn btn--outline btn--lg">
-                    Importer un CSV / Excel
+                    Importer un fichier
                   </Link>
                 </div>
               </div>

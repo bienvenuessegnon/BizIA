@@ -1,6 +1,6 @@
 /** Types alignés sur le contrat API (docs/api/README.md). */
 
-export type SourceType = "manual" | "csv" | "excel" | "unknown";
+export type SourceType = "manual" | "csv" | "excel" | "pdf" | "image" | "unknown";
 
 export type Product = {
   id?: string;

@@ -43,7 +43,7 @@ def empty_result(source: str = "unknown") -> dict[str, Any]:
 def analyze(dataset: dict[str, Any], include_forecast: bool = False) -> dict[str, Any]:
     """Schéma commun → résultats structurés.
 
-    Le moteur ignore la source : `manual`, `csv` et `excel` portant les mêmes
+    Le moteur ignore la source : `manual`, `csv`, `excel`, `pdf` et `image` portant les mêmes
     lignes produisent exactement les mêmes indicateurs.
 
     `include_forecast=True` ajoute une clé `forecast` (moyenne mobile). Elle est

@@ -166,7 +166,9 @@ class JsonStore:
     def record_source(self, source: str) -> None:
         with self._lock:
             data = self._load()
-            data["last_source"] = source if source in {"manual", "csv", "excel"} else "unknown"
+            data["last_source"] = (
+                source if source in {"manual", "csv", "excel", "pdf", "image"} else "unknown"
+            )
             self._dump(data)
 
     def save_analysis(self, analysis: dict[str, Any]) -> None:

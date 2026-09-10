@@ -2,7 +2,7 @@
 
 Analyste de données IA autonome pour les PME et les entreprises.
 
-BizIA transforme des données saisies à la main ou importées (CSV / Excel) en indicateurs, alertes, insights et un dialogue avec un assistant — **via un seul pipeline d’analyse**.
+BizIA transforme des données saisies à la main ou importées (CSV, Excel, PDF ou image) en indicateurs, alertes, insights et un dialogue avec un assistant — **via un seul pipeline d’analyse**.
 
 > Les données saisies manuellement et les données importées alimentent le même moteur. Pas deux logiques métier.
 
@@ -19,7 +19,7 @@ Chaque membre implémente ensuite son périmètre dans son dossier.
 ## Fonctionnalités MVP (à implémenter)
 
 - Saisie manuelle de produits et de ventes
-- Import CSV et Excel simple
+- Import CSV, Excel, PDF (tableau) et images (OCR)
 - Statistiques descriptives : CA, bénéfice, marges, stocks faibles, tendances
 - Alertes par seuils et première détection d’anomalies
 - Dashboard (indicateurs, alertes, insights)
@@ -31,7 +31,7 @@ Hors priorité hackathon : PDF non structurés, prévisions complexes, multi-bou
 ## Architecture
 
 ```
-Sources (formulaire | CSV | Excel)
+Sources (formulaire | CSV | Excel | PDF | image)
         ↓
    NORMALISATION → schéma commun
         ↓
@@ -205,7 +205,7 @@ Aperçu :
 | GET | `/health` | Santé |
 | GET/POST | `/api/products` | Produits |
 | GET/POST | `/api/sales` | Ventes |
-| POST | `/api/ingestion/files` | Import CSV/Excel |
+| POST | `/api/ingestion/files` | Import CSV/Excel/PDF/image |
 | POST | `/api/analysis/run` | Lance le moteur unique |
 | GET | `/api/analysis/summary` | Dernier résultat |
 | GET | `/api/alerts` | Alertes |

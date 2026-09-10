@@ -15,7 +15,7 @@ Le moteur est un package Python appelé par le backend :
 `ml.pipeline.analyze(dataset) -> dict`.
 
 **Point d'architecture à souligner :** il ignore totalement la provenance des
-données. Saisie manuelle, CSV ou Excel entrent dans le même schéma commun et
+données. Saisie manuelle, CSV, Excel, PDF ou image entrent dans le même schéma commun et
 ressortent avec les mêmes indicateurs. C'est ce qui garantit qu'on ne raconte
 pas deux vérités différentes selon la façon dont l'utilisateur a saisi.
 

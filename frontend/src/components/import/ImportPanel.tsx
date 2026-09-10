@@ -40,7 +40,7 @@ export function ImportPanel() {
   function pickFile(selected: File | null) {
     if (!selected) return;
     if (!isAcceptedDocument(selected)) {
-      setError("Format non supporté. Formats acceptés : CSV et Excel (.xlsx, .xls).");
+      setError("Format non supporté. Formats acceptés : CSV, Excel, PDF et images (PNG, JPEG, WebP).");
       setFile(null);
       return;
     }
@@ -79,13 +79,13 @@ export function ImportPanel() {
     }
   }
 
-  const displayFormats = ["csv", "xlsx", "xls"] as const;
+  const displayFormats = ["csv", "xlsx", "pdf", "png"] as const;
 
   return (
     <AppPageLayout
       eyebrow="Données"
       title="Import & export"
-      description="Importez un CSV ou un Excel. Les lignes sont normalisées vers le schéma commun, comme la saisie manuelle."
+      description="Importez un CSV, un Excel, un PDF ou une photo de tableau. Les lignes sont normalisées vers le schéma commun, comme la saisie manuelle."
     >
       <div className="card card--glass import-zone">
         <div
@@ -117,7 +117,7 @@ export function ImportPanel() {
             </>
           ) : (
             <>
-              <p className="dropzone__title">Glissez un CSV ou un Excel ici</p>
+              <p className="dropzone__title">Glissez un CSV, Excel, PDF ou une image ici</p>
               <p className="muted">ou cliquez pour parcourir vos fichiers</p>
             </>
           )}
@@ -152,7 +152,7 @@ export function ImportPanel() {
         <h2>Formats acceptés</h2>
         <ul className="import-hints">
           <li>
-            <strong>Tableurs :</strong> CSV et Excel (.xlsx, .xls)
+            <strong>Fichiers :</strong> CSV, Excel (.xlsx, .xls), PDF (tableau) et images (PNG, JPEG, WebP)
           </li>
           <li>Une vente dont le SKU n&apos;existe pas au catalogue est ignorée.</li>
           <li>Extensions reconnues : {ACCEPTED_EXTENSIONS.map((e) => `.${e}`).join(", ")}</li>

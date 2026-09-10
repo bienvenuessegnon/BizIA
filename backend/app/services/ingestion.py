@@ -6,6 +6,9 @@ vers le schéma commun, exactement comme la saisie manuelle.
 
 from __future__ import annotations
 
+import csv
+import io
+import re
 import unicodedata
 from pathlib import Path
 from typing import Any
@@ -46,6 +49,16 @@ SALE_FIELDS = (
 
 _CSV_SUFFIXES = {".csv"}
 _EXCEL_SUFFIXES = {".xlsx", ".xls"}
+_PDF_SUFFIXES = {".pdf"}
+_IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tif", ".tiff"}
+
+_SOURCE_BY_SUFFIX: dict[str, str] = {}
+_SOURCE_BY_SUFFIX.update({suffix: "csv" for suffix in _CSV_SUFFIXES})
+_SOURCE_BY_SUFFIX.update({suffix: "excel" for suffix in _EXCEL_SUFFIXES})
+_SOURCE_BY_SUFFIX.update({suffix: "pdf" for suffix in _PDF_SUFFIXES})
+_SOURCE_BY_SUFFIX.update({suffix: "image" for suffix in _IMAGE_SUFFIXES})
+
+_ocr_engine: Any | None = None
 
 
 class IngestionError(Exception):
@@ -56,14 +69,19 @@ class IngestionError(Exception):
         self.message = message
 
 
+def source_for_filename(filename: str) -> str | None:
+    return _SOURCE_BY_SUFFIX.get(Path(filename).suffix.lower())
+
+
 def parse_tabular(path: str, filename: str) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """CSV / Excel → (products, sales) au schéma commun."""
+    """CSV / Excel / PDF / image → (products, sales) au schéma commun."""
     suffix = Path(filename).suffix.lower()
-    if suffix not in _CSV_SUFFIXES | _EXCEL_SUFFIXES:
+    source = source_for_filename(filename)
+    if source is None:
         raise IngestionError(
             415,
             "unsupported_type",
-            "Seuls les fichiers CSV et Excel (.xlsx, .xls) sont acceptés.",
+            "Formats acceptés : CSV, Excel (.xlsx, .xls), PDF et images (PNG, JPEG, WebP).",
         )
 
     frame = _read_frame(path, suffix)
@@ -103,7 +121,6 @@ def parse_tabular(path: str, filename: str) -> tuple[list[dict[str, Any]], list[
             "unknown_schema",
             "Un fichier de ventes doit contenir un SKU produit et une quantité.",
         )
-    source = "excel" if suffix in _EXCEL_SUFFIXES else "csv"
     sales: list[dict[str, Any]] = []
     for record in _records(frame, mapping):
         if not str(record.get("product_sku") or "").strip():
@@ -118,21 +135,249 @@ def _read_frame(path: str, suffix: str) -> pd.DataFrame:
     try:
         if suffix in _CSV_SUFFIXES:
             frame = pd.read_csv(path, encoding="utf-8-sig")
-        else:
+        elif suffix in _EXCEL_SUFFIXES:
             frame = pd.read_excel(path)
+        elif suffix in _PDF_SUFFIXES:
+            frame = _read_pdf(path)
+        else:
+            frame = _read_image(path)
     except IngestionError:
         raise
     except Exception as exc:
         raise IngestionError(
             400,
             "parse_error",
-            "Le fichier n'a pas pu être lu. Vérifiez le format CSV ou Excel.",
+            "Le fichier n'a pas pu être lu. Vérifiez qu'il contient un tableau (CSV, Excel, PDF ou image lisible).",
         ) from exc
 
+    return _prepare_frame(frame)
+
+
+def _prepare_frame(frame: pd.DataFrame | None) -> pd.DataFrame:
     if frame is None or (frame.empty and len(frame.columns) == 0):
         raise IngestionError(400, "parse_error", "Le fichier importé est vide.")
+    frame = frame.copy()
     frame.columns = [_strip_header(column) for column in frame.columns]
     return frame
+
+
+def _read_pdf(path: str) -> pd.DataFrame:
+    import pdfplumber
+
+    tables: list[list[list[Any]]] = []
+    texts: list[str] = []
+    try:
+        with pdfplumber.open(path) as pdf:
+            if not pdf.pages:
+                raise IngestionError(400, "parse_error", "Le PDF importé est vide.")
+            for page in pdf.pages:
+                for table in page.extract_tables() or []:
+                    tables.append(table)
+                extracted = page.extract_text() or ""
+                if extracted.strip():
+                    texts.append(extracted)
+    except IngestionError:
+        raise
+    except Exception as exc:
+        raise IngestionError(
+            400,
+            "parse_error",
+            "Le PDF n'a pas pu être lu. Vérifiez qu'il n'est pas corrompu.",
+        ) from exc
+
+    for table in tables:
+        frame = _rows_to_frame(table)
+        if frame is not None and _detect_kind([str(c) for c in frame.columns]):
+            return frame
+
+    joined = "\n".join(texts)
+    frame = _text_to_frame(joined)
+    if frame is not None and _detect_kind([str(c) for c in frame.columns]):
+        return frame
+
+    for image in _render_pdf_pages(path):
+        frame = _ocr_image_to_frame(image)
+        if frame is not None and _detect_kind([str(c) for c in frame.columns]):
+            return frame
+
+    raise IngestionError(
+        422,
+        "unknown_schema",
+        "Aucun tableau de produits ou de ventes n'a été reconnu dans le PDF.",
+    )
+
+
+def _read_image(path: str) -> pd.DataFrame:
+    from PIL import Image
+
+    try:
+        with Image.open(path) as image:
+            frame = _ocr_image_to_frame(image.convert("RGB"))
+    except IngestionError:
+        raise
+    except Exception as exc:
+        raise IngestionError(
+            400,
+            "parse_error",
+            "L'image n'a pas pu être lue. Utilisez PNG, JPEG ou WebP.",
+        ) from exc
+
+    if frame is None or not _detect_kind([str(c) for c in frame.columns]):
+        raise IngestionError(
+            422,
+            "unknown_schema",
+            "Aucun tableau de produits ou de ventes n'a été reconnu dans l'image.",
+        )
+    return frame
+
+
+def _render_pdf_pages(path: str) -> list[Any]:
+    try:
+        import pypdfium2 as pdfium
+    except ImportError:
+        return []
+
+    rendered: list[Any] = []
+    document = pdfium.PdfDocument(path)
+    try:
+        for index in range(len(document)):
+            page = document[index]
+            rendered.append(page.render(scale=2).to_pil().convert("RGB"))
+    finally:
+        document.close()
+    return rendered
+
+
+def _ocr_engine_instance() -> Any:
+    global _ocr_engine
+    if _ocr_engine is None:
+        try:
+            from rapidocr_onnxruntime import RapidOCR
+        except ImportError as exc:
+            raise IngestionError(
+                400,
+                "parse_error",
+                "La lecture d'image n'est pas disponible sur ce serveur.",
+            ) from exc
+        _ocr_engine = RapidOCR()
+    return _ocr_engine
+
+
+def _ocr_image_to_frame(image: Any) -> pd.DataFrame | None:
+    engine = _ocr_engine_instance()
+    result, _elapsed = engine(image)
+    if not result:
+        return None
+    rows = _ocr_items_to_rows(result)
+    frame = _rows_to_frame(rows)
+    if frame is not None:
+        return frame
+    lines = [" ".join(cell for cell in row if cell) for row in rows]
+    return _text_to_frame("\n".join(lines))
+
+
+def _ocr_items_to_rows(result: list[Any]) -> list[list[str]]:
+    items: list[tuple[float, float, str]] = []
+    heights: list[float] = []
+    for item in result:
+        box, text = item[0], item[1]
+        if not str(text).strip():
+            continue
+        ys = [float(point[1]) for point in box]
+        xs = [float(point[0]) for point in box]
+        heights.append(max(ys) - min(ys) if ys else 16.0)
+        items.append((sum(ys) / len(ys), min(xs), str(text).strip()))
+    if not items:
+        return []
+
+    threshold = max(10.0, (sorted(heights)[len(heights) // 2] if heights else 16.0) * 0.7)
+    items.sort(key=lambda entry: (entry[0], entry[1]))
+    clusters: list[list[tuple[float, float, str]]] = []
+    for y, x, text in items:
+        if not clusters:
+            clusters.append([(y, x, text)])
+            continue
+        last_y = sum(entry[0] for entry in clusters[-1]) / len(clusters[-1])
+        if abs(y - last_y) <= threshold:
+            clusters[-1].append((y, x, text))
+        else:
+            clusters.append([(y, x, text)])
+    return [[text for _, _, text in sorted(cluster, key=lambda entry: entry[1])] for cluster in clusters]
+
+
+def _rows_to_frame(rows: list[list[Any]] | None) -> pd.DataFrame | None:
+    if not rows:
+        return None
+    cleaned: list[list[str]] = []
+    for row in rows:
+        cells = [_cell_text(value) for value in row]
+        if any(cells):
+            cleaned.append(cells)
+    if len(cleaned) < 2:
+        return None
+    width = max(len(row) for row in cleaned)
+    if width < 2:
+        return None
+    padded = [row + [""] * (width - len(row)) for row in cleaned]
+    headers = _unique_headers(padded[0])
+    body = padded[1:]
+    if not any(any(cell for cell in row) for row in body):
+        return None
+    return pd.DataFrame(body, columns=headers)
+
+
+def _text_to_frame(text: str) -> pd.DataFrame | None:
+    stripped = (text or "").strip()
+    if not stripped:
+        return None
+
+    candidates = [stripped]
+    collapsed = re.sub(r"[ \t]{2,}", ",", stripped)
+    if collapsed != stripped:
+        candidates.append(collapsed)
+
+    for candidate in candidates:
+        buffer = io.StringIO(candidate)
+        try:
+            dialect = csv.Sniffer().sniff(candidate[:4096], delimiters=",;\t|")
+            buffer.seek(0)
+            frame = pd.read_csv(buffer, dialect=dialect)
+        except Exception:
+            buffer.seek(0)
+            try:
+                frame = pd.read_csv(buffer, sep=None, engine="python")
+            except Exception:
+                continue
+        if frame is not None and len(frame.columns) >= 2:
+            return frame
+
+    lines = [line.strip() for line in stripped.splitlines() if line.strip()]
+    if len(lines) < 2:
+        return None
+    split_rows = [re.split(r"\s{2,}|\t+", line) for line in lines]
+    return _rows_to_frame(split_rows)
+
+
+def _unique_headers(headers: list[str]) -> list[str]:
+    seen: dict[str, int] = {}
+    unique: list[str] = []
+    for header in headers:
+        base = _strip_header(header) or "col"
+        count = seen.get(base, 0)
+        seen[base] = count + 1
+        unique.append(base if count == 0 else f"{base}_{count}")
+    return unique
+
+
+def _cell_text(value: Any) -> str:
+    if value is None:
+        return ""
+    try:
+        if pd.isna(value):
+            return ""
+    except (TypeError, ValueError):
+        pass
+    return str(value).replace("\n", " ").strip()
 
 
 def _detect_kind(headers: list[str]) -> str | None:

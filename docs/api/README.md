@@ -1,6 +1,6 @@
 # Contrat API BizIA
 
-Version MVP 0.3 — saisie manuelle et import CSV/Excel alimentent le même pipeline.
+Version MVP 0.3 — saisie manuelle et import CSV/Excel/PDF/image alimentent le même pipeline.
 
 Le serveur FastAPI régénère aussi une spec interactive : `http://localhost:8000/docs`.  
 Fichier OpenAPI versionné : [openapi.yaml](openapi.yaml).
@@ -18,7 +18,7 @@ Corps JSON :
 | 400 | `parse_error` | Fichier illisible |
 | 400 | `no_analysis` | Rapport sans analyse |
 | 404 | `unknown_product` | Vente saisie vers un SKU inconnu |
-| 415 | `unsupported_type` | Autre chose que CSV/Excel |
+| 415 | `unsupported_type` | Autre chose que CSV, Excel, PDF ou image |
 | 422 | `unknown_schema` | Colonnes non mappées |
 | 422 | `validation_error` | Payload Pydantic invalide |
 
@@ -67,7 +67,7 @@ Si `unit_cost` ou `sold_at` sont nuls, le backend complète (coût produit, main
 
 ### Import — `POST /api/ingestion/files`
 
-`multipart/form-data` champ `file` (`.csv`, `.xlsx`).
+`multipart/form-data` champ `file` (`.csv`, `.xlsx`, `.xls`, `.pdf`, `.png`, `.jpg`, `.jpeg`, `.webp`).
 
 Réponse :
 

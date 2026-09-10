@@ -4,8 +4,9 @@
                  ┌── Formulaire manuel ──┐
                  │                       │
 Sources ─────────┼── CSV ────────────────┤
-                 │                       ↓
-                 └── Excel ─────────→ NORMALISATION
+                 ├── Excel ──────────────┤
+                 ├── PDF ────────────────┤
+                 └── Image ──────────→ NORMALISATION
                                            ↓
                                      SCHÉMA COMMUN
                                            ↓

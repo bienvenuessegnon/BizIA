@@ -127,7 +127,7 @@ def test_import_feeds_same_store(client: TestClient) -> None:
 
     rejected = client.post(
         "/api/ingestion/files",
-        files={"file": ("notes.pdf", b"%PDF-fake", "application/pdf")},
+        files={"file": ("notes.docx", b"PK", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
     )
     assert rejected.status_code == 415
     assert rejected.json()["error"]["code"] == "unsupported_type"
