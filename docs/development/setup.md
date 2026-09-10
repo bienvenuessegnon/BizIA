@@ -13,6 +13,10 @@ Python 3.12 et Node 22 sont les versions de référence de cet environnement.
 
 Le fichier `render.yaml` déploie l’API et le front. Connexion par e-mail + mot de passe, pas de Google.
 
-1. Sur Render : **New** → **Blueprint** → ce dépôt, branche `dev` (après merge) ou la branche de la PR.
-2. Deux services : `bizia-api` et `bizia-web`.
+1. Sur Render : **New** → **Blueprint** → ce dépôt, branche `dev`.
+2. Deux services : `bizia-api` (Python) et `bizia-web` (Node).
 3. Aucune clé à coller. Les comptes JSON sont **éphémères** (un redéploiement les efface).
+
+Si un service est créé à la main plutôt que par le Blueprint, choisir **Python** pour l’API
+et **Node** pour le front. Avec le langage **Docker**, Render construit le `Dockerfile` de la
+racine, qui ne contient que l’API.

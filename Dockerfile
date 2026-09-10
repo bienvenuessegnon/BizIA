@@ -1,3 +1,5 @@
+# Image de l'API BizIA. Le contexte de build est la racine du dépôt
+# (le backend importe le package `ml/` et lit `data/`).
 FROM python:3.12-slim
 
 WORKDIR /repo
