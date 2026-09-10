@@ -157,12 +157,7 @@ export function ImportPreview({
         <div>
           <p className="eyebrow">Aperçu avant enregistrement</p>
           <h2>Tableau reconnu dans {preview.filename}</h2>
-          <p className="muted">
-            {extractedLabel || "Aucune ligne"} retrouvée(s)
-            {preview.extraction_method === "gemini"
-              ? " en lisant l'ensemble du document, y compris le texte rédigé."
-              : " à partir des colonnes du fichier."}
-          </p>
+          <p className="muted">{extractedLabel || "Aucune ligne"}</p>
         </div>
         <span
           className={`extraction-badge extraction-badge--${preview.extraction_method}`}
@@ -173,11 +168,7 @@ export function ImportPreview({
         </span>
       </div>
 
-      <Alert variant="info" title="Relisez avant de confirmer">
-        Rien n&apos;est encore enregistré. Corrigez ou complétez les cellules,
-        ajoutez les lignes manquantes et supprimez celles qui ne figurent pas dans
-        le document.
-      </Alert>
+      <Alert variant="info">Rien n&apos;est encore enregistré.</Alert>
 
       {preview.warnings.map((warning, index) => (
         <Alert key={`${warning}-${index}`} variant="warning">
@@ -241,10 +232,6 @@ export function ImportPreview({
           Annuler
         </Button>
       </div>
-      <p className="import-preview__action-help muted">
-        « Enregistrer et analyser » ouvre directement le tableau de bord. « Enregistrer le
-        tableau » vous permet de poursuivre la saisie avant de lancer l&apos;analyse.
-      </p>
     </div>
   );
 }

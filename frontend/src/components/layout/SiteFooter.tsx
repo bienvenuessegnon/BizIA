@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { BizIALogo } from "@/components/brand/BizIALogo";
+import { useAuth } from "@/contexts/AuthContext";
 
 const CONTACT_EMAIL = "contact@bizia.app";
 
@@ -12,6 +15,9 @@ const NAVIGATION = [
 ] as const;
 
 export function SiteFooter() {
+  const { isAuthenticated, isLoading } = useAuth();
+  const showNav = !isLoading && isAuthenticated;
+
   return (
     <footer className="site-footer">
       <div className="site-footer__inner">
@@ -25,34 +31,58 @@ export function SiteFooter() {
           </p>
         </div>
 
-        <nav className="site-footer__col" aria-labelledby="footer-nav-title">
-          <h2 id="footer-nav-title" className="site-footer__col-title">
-            Naviguer
-          </h2>
-          <ul className="site-footer__list">
-            {NAVIGATION.map(([href, label]) => (
-              <li key={href}>
-                <Link href={href} className="site-footer__link">
-                  {label}
+        {showNav ? (
+          <nav className="site-footer__col" aria-labelledby="footer-nav-title">
+            <h2 id="footer-nav-title" className="site-footer__col-title">
+              Naviguer
+            </h2>
+            <ul className="site-footer__list">
+              {NAVIGATION.map(([href, label]) => (
+                <li key={href}>
+                  <Link href={href} className="site-footer__link">
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ) : (
+          <nav className="site-footer__col" aria-labelledby="footer-start-title">
+            <h2 id="footer-start-title" className="site-footer__col-title">
+              Commencer
+            </h2>
+            <ul className="site-footer__list">
+              <li>
+                <Link href="/inscription" className="site-footer__link">
+                  Créer un compte
                 </Link>
               </li>
-            ))}
-          </ul>
-        </nav>
+              <li>
+                <Link href="/connexion" className="site-footer__link">
+                  Se connecter
+                </Link>
+              </li>
+            </ul>
+          </nav>
+        )}
 
         <div className="site-footer__col">
           <h2 className="site-footer__col-title">Besoin d&apos;aide ?</h2>
           <ul className="site-footer__list">
-            <li>
-              <Link href="/import" className="site-footer__link">
-                Importer un fichier
-              </Link>
-            </li>
-            <li>
-              <Link href="/chat" className="site-footer__link">
-                Poser une question à l&apos;assistant
-              </Link>
-            </li>
+            {showNav && (
+              <li>
+                <Link href="/import" className="site-footer__link">
+                  Importer un fichier
+                </Link>
+              </li>
+            )}
+            {showNav && (
+              <li>
+                <Link href="/chat" className="site-footer__link">
+                  Poser une question à l&apos;assistant
+                </Link>
+              </li>
+            )}
             <li>
               <a href={`mailto:${CONTACT_EMAIL}`} className="site-footer__link">
                 Nous écrire

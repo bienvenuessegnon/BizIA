@@ -103,7 +103,6 @@ export function ImportPanel() {
     <AppPageLayout
       eyebrow="Données"
       title="Import & export"
-      description="Déposez un Excel, un CSV, un PDF ou une photo. BizIA reconnaît vos produits et vos ventes, même si les titres de colonnes ne sont pas les mêmes partout."
     >
       <div className="card card--glass import-zone">
         <div
@@ -204,29 +203,6 @@ export function ImportPanel() {
           }}
         />
       )}
-
-      <div className="card card--glass import-help">
-        <h2>Que mettre dans le document ?</h2>
-        <p>
-          Un fichier de <strong>produits</strong>, un fichier de <strong>ventes</strong>, ou les deux
-          ensemble. Pas besoin d&apos;un modèle précis : les titres de colonnes, même écrits
-          autrement, sont compris.
-        </p>
-        <ul className="import-help__list">
-          <li>
-            <strong>Produits</strong> : le nom, et si possible la référence, le prix de vente,
-            le coût et le stock.
-          </li>
-          <li>
-            <strong>Ventes</strong> : le produit, la quantité, et si possible le prix et la date.
-          </li>
-        </ul>
-        <p className="muted">
-          Une vente n&apos;est enregistrée que si le produit existe déjà dans votre catalogue, ou
-          s&apos;il figure dans le même document. Un tableau vous est toujours proposé à relire
-          avant d&apos;enregistrer.
-        </p>
-      </div>
 
       <ExportPanel />
     </AppPageLayout>

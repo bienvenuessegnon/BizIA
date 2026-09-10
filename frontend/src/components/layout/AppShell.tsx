@@ -7,6 +7,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { BizIALogo } from "@/components/brand/BizIALogo";
 import { ApiStatusBanner } from "@/components/layout/ApiStatusBanner";
 import { SiteFooter } from "@/components/layout/SiteFooter";
+import { Spinner } from "@/components/ui/Spinner";
 import { useAuth } from "@/contexts/AuthContext";
 
 const NAV_LINKS = [
@@ -28,17 +29,19 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const isAuthPage = pathname != null && AUTH_ROUTES.includes(pathname);
   const isHome = pathname === "/";
+  // Sans compte, l'accueil ne mène qu'à l'inscription : les onglets de
+  // l'application n'apparaissent qu'une fois la session ouverte.
+  const showNav = !isAuthPage && !isLoading && isAuthenticated;
+  const isProtected = pathname != null && PROTECTED_ROUTES.includes(pathname);
+  // Le contenu protégé n'est jamais rendu avant que la session soit connue,
+  // sinon il apparaîtrait une fraction de seconde avant la redirection.
+  const holdProtectedPage = isProtected && (isLoading || !isAuthenticated);
 
   useEffect(() => {
-    if (
-      !isLoading &&
-      !isAuthenticated &&
-      pathname != null &&
-      PROTECTED_ROUTES.includes(pathname)
-    ) {
+    if (!isLoading && !isAuthenticated && isProtected) {
       router.replace("/connexion");
     }
-  }, [isAuthenticated, isLoading, pathname, router]);
+  }, [isAuthenticated, isLoading, isProtected, router]);
 
   async function handleLogout() {
     await logout();
@@ -53,7 +56,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <BizIALogo size="md" showTagline />
           </Link>
 
-          {!isAuthPage && (
+          {showNav && (
             <nav className="header__links header__links--center" aria-label="Navigation principale">
               {NAV_LINKS.map(([href, label]) => (
                 <Link
@@ -90,19 +93,21 @@ export function AppShell({ children }: { children: ReactNode }) {
               )}
             </div>
 
-            <button
-              type="button"
-              className="header__menu-btn"
-              aria-expanded={menuOpen}
-              aria-label="Menu de navigation"
-              onClick={() => setMenuOpen((o) => !o)}
-            >
-              <span /><span /><span />
-            </button>
+            {showNav && (
+              <button
+                type="button"
+                className="header__menu-btn"
+                aria-expanded={menuOpen}
+                aria-label="Menu de navigation"
+                onClick={() => setMenuOpen((o) => !o)}
+              >
+                <span /><span /><span />
+              </button>
+            )}
           </div>
         </div>
 
-        {!isAuthPage && (
+        {showNav && (
           <nav
             className={`header__mobile-drawer ${menuOpen ? "header__mobile-drawer--open" : ""}`}
             aria-label="Menu mobile"
@@ -126,7 +131,13 @@ export function AppShell({ children }: { children: ReactNode }) {
       <main
         className={`main ${isAuthPage ? "main--auth" : ""} ${isHome ? "main--home main--landing" : "main--app"}`}
       >
-        {children}
+        {holdProtectedPage ? (
+          <div className="route-guard">
+            <Spinner label={isLoading ? "Chargement…" : "Redirection vers la connexion…"} />
+          </div>
+        ) : (
+          children
+        )}
       </main>
 
       <SiteFooter />

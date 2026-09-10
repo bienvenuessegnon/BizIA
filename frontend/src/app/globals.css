@@ -1243,15 +1243,6 @@ label {
   flex-wrap: wrap;
 }
 
-.import-help__list {
-  margin: var(--space-md) 0;
-  padding-left: 1.25rem;
-}
-
-.import-help__list li {
-  margin-bottom: var(--space-sm);
-}
-
 .import-preview {
   display: flex;
   flex-direction: column;
@@ -1368,11 +1359,6 @@ label {
 .import-preview__actions {
   padding-top: var(--space-md);
   border-top: 1px solid var(--color-border);
-}
-
-.import-preview__action-help {
-  margin: calc(-1 * var(--space-md)) 0 0;
-  font-size: 0.85rem;
 }
 
 @media (max-width: 640px) {
@@ -1799,6 +1785,12 @@ label {
 .dashboard-loading {
   padding: var(--space-2xl);
   text-align: center;
+}
+
+.route-guard {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-2xl);
 }
 
 .dashboard-empty {

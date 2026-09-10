@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import csv
 import io
+import logging
 import re
 import unicodedata
 from collections.abc import Iterable
@@ -15,6 +16,8 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 COLUMN_ALIASES: dict[str, set[str]] = {
     "sku": {"sku", "code", "ref", "reference", "code_produit", "reference_produit", "sku_produit"},
@@ -172,7 +175,8 @@ def parse_tabular(path: str, filename: str) -> tuple[list[dict[str, Any]], list[
         raise IngestionError(
             422,
             "unknown_schema",
-            "Colonnes non reconnues : impossible de distinguer un catalogue de produits d'un journal de ventes.",
+            "Nous n'avons pas reconnu le contenu de ce fichier : il ne ressemble "
+            "ni à une liste de produits, ni à une liste de ventes.",
         )
 
     if kind == "products":
@@ -181,7 +185,7 @@ def parse_tabular(path: str, filename: str) -> tuple[list[dict[str, Any]], list[
             raise IngestionError(
                 422,
                 "unknown_schema",
-                "Aucune colonne SKU reconnue pour les produits.",
+                "Une liste de produits doit indiquer la référence de chaque produit.",
             )
         products = [
             record
@@ -200,7 +204,7 @@ def parse_tabular(path: str, filename: str) -> tuple[list[dict[str, Any]], list[
         raise IngestionError(
             422,
             "unknown_schema",
-            "Un fichier de ventes doit contenir un SKU produit et une quantité.",
+            "Une liste de ventes doit indiquer le produit vendu et la quantité.",
         )
     sales: list[dict[str, Any]] = []
     for record in _records(frame, mapping):
@@ -228,7 +232,8 @@ def _read_frame(path: str, suffix: str) -> pd.DataFrame:
         raise IngestionError(
             400,
             "parse_error",
-            "Le fichier n'a pas pu être lu. Vérifiez qu'il contient un tableau (CSV, Excel, PDF ou image lisible).",
+            "Ce fichier n'a pas pu être ouvert. Vérifiez qu'il contient bien un "
+            "tableau, puis réessayez.",
         ) from exc
 
     return _prepare_frame(frame)
@@ -281,7 +286,8 @@ def _read_pdf(path: str) -> pd.DataFrame:
     raise IngestionError(
         422,
         "unknown_schema",
-        "Aucun tableau de produits ou de ventes n'a été reconnu dans le PDF.",
+        "Nous n'avons pas réussi à relire ce PDF. Envoyez le tableau en Excel "
+        "ou CSV, ou saisissez les lignes à la main.",
     )
 
 
@@ -324,7 +330,8 @@ def _read_image(path: str) -> pd.DataFrame:
         raise IngestionError(
             422,
             "unknown_schema",
-            "Aucun tableau de produits ou de ventes n'a été reconnu dans l'image.",
+            "Nous n'avons pas réussi à relire cette image. Reprenez la photo bien "
+            "à plat et nette, ou envoyez le tableau en Excel ou CSV.",
         )
     return frame
 
@@ -346,24 +353,35 @@ def _render_pdf_pages(path: str) -> list[Any]:
     return rendered
 
 
-def _ocr_engine_instance() -> Any:
+def _ocr_engine_instance() -> Any | None:
+    """Moteur de reconnaissance, ou `None` s'il est absent de l'installation.
+
+    Une lecture d'image indisponible n'est pas une erreur d'import : l'appelant
+    poursuit avec les autres pistes, puis conclut lui-même.
+    """
     global _ocr_engine
     if _ocr_engine is None:
         try:
             from rapidocr_onnxruntime import RapidOCR
-        except ImportError as exc:
-            raise IngestionError(
-                400,
-                "parse_error",
-                "La lecture d'image n'est pas disponible sur ce serveur.",
-            ) from exc
-        _ocr_engine = RapidOCR()
+
+            # Le chargement des modèles peut aussi échouer (paquet absent,
+            # téléchargement impossible, mémoire insuffisante).
+            _ocr_engine = RapidOCR()
+        except Exception:
+            logger.warning("Reconnaissance de texte indisponible", exc_info=True)
+            return None
     return _ocr_engine
 
 
 def _ocr_image_to_frame(image: Any) -> pd.DataFrame | None:
     engine = _ocr_engine_instance()
-    result, _elapsed = engine(image)
+    if engine is None:
+        return None
+    try:
+        result, _elapsed = engine(image)
+    except Exception:
+        logger.warning("Lecture de l'image interrompue", exc_info=True)
+        return None
     if not result:
         return None
     rows = _ocr_items_to_rows(result)

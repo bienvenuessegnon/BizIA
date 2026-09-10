@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useApiHealth } from "@/hooks/useApiHealth";
 
 export function ApiStatusBanner() {
@@ -16,7 +15,6 @@ export function ApiStatusBanner() {
           <strong>Connexion interrompue</strong> — Vos données ne peuvent pas être
           affichées pour le moment. Réessayez dans un instant.
         </p>
-        <Link href="/import" className="api-banner__link">Importer des données</Link>
       </div>
     </div>
   );

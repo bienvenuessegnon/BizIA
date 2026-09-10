@@ -38,10 +38,6 @@ export function ExportPanel() {
         <IconDownload size={28} className="export-panel__head-icon" />
         <div>
           <h2>Exporter l&apos;analyse</h2>
-          <p className="muted">
-            Téléchargez le bilan complet avec indicateurs, graphiques, classements,
-            alertes et conseils.
-          </p>
         </div>
       </div>
 

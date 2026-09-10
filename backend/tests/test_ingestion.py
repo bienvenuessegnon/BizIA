@@ -203,6 +203,29 @@ def test_parse_products_image(tmp_path: Path) -> None:
     assert any(item["sku"] == "HUILE-1L" for item in products)
 
 
+def test_image_without_recognition_engine_explains_what_to_do(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Un moteur absent ne doit pas produire un message parlant du serveur."""
+    from app.services import ingestion
+
+    pdf_path = tmp_path / "produits.pdf"
+    png_path = tmp_path / "produits.png"
+    _write_table_pdf(pdf_path, _PRODUCT_ROWS)
+    _pdf_first_page_png(pdf_path, png_path)
+
+    monkeypatch.setattr(ingestion, "_ocr_engine", None)
+    monkeypatch.setattr(ingestion, "_ocr_engine_instance", lambda: None)
+
+    with pytest.raises(IngestionError) as error:
+        parse_tabular(str(png_path), "produits.png")
+
+    message = error.value.message
+    assert error.value.status_code == 422
+    assert "serveur" not in message.lower()
+    assert "Excel" in message
+
+
 def test_unreadable_pdf(tmp_path: Path) -> None:
     path = tmp_path / "notes.pdf"
     path.write_bytes(b"%PDF-fake")
