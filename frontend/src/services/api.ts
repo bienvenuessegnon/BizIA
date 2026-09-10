@@ -1,24 +1,51 @@
 /**
  * Client HTTP unique du frontend (contrat figé avec le backend).
- * TODO(imma): brancher les écrans dessus, gérer chargements et erreurs.
  */
 
 import type { Alert, AnalysisResult, ChatReply, IngestionResult, Product, Sale } from "@/types";
+import { getStoredSession } from "@/services/auth";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
+export class ApiError extends Error {
+  code: "network" | "http";
+
+  constructor(code: ApiError["code"], message: string) {
+    super(message);
+    this.code = code;
+    this.name = "ApiError";
+  }
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, {
-    ...init,
-    headers: {
-      ...(init?.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
-      ...init?.headers,
-    },
-  });
+  let response: Response;
+  try {
+    const token = getStoredSession()?.token;
+    response = await fetch(`${API_URL}${path}`, {
+      ...init,
+      headers: {
+        ...(init?.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...init?.headers,
+      },
+    });
+  } catch {
+    throw new ApiError(
+      "network",
+      "Serveur backend inaccessible. Démarrez-le sur http://localhost:8000",
+    );
+  }
+
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const message = data?.error?.message ?? data?.detail ?? response.statusText;
-    throw new Error(typeof message === "string" ? message : "Erreur API");
+    const rawMessage = data?.error?.message ?? data?.detail ?? response.statusText;
+    const message =
+      typeof rawMessage === "string"
+        ? rawMessage
+        : Array.isArray(rawMessage)
+          ? "Requête invalide."
+          : "Erreur lors de la communication avec le serveur.";
+    throw new ApiError("http", message);
   }
   return data as T;
 }
@@ -51,6 +78,34 @@ export const api = {
   alerts: () => request<{ items: Alert[] }>("/api/alerts"),
   chat: (message: string) =>
     request<ChatReply>("/api/chat/messages", { method: "POST", body: JSON.stringify({ message }) }),
+  reports: {
+    download: async (format: "pdf" | "docx") => {
+      let response: Response;
+      try {
+        const token = getStoredSession()?.token;
+        response = await fetch(`${API_URL}/api/reports/generate?format=${format}`, {
+          method: "POST",
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+      } catch {
+        throw new ApiError("network", "Serveur backend inaccessible.");
+      }
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new ApiError("http", data?.error?.message ?? "Export indisponible.");
+      }
+      downloadBlob(await response.blob(), `bizia-rapport.${format}`);
+    },
+  },
 };
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
 export { API_URL };

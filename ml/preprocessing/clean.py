@@ -14,14 +14,13 @@ Ventes
     - les doublons exacts datés (même produit, quantité, prix, horodatage, canal)
       sont considérés comme un double import et supprimés ;
     - `unit_price` et `unit_cost` manquants sont repris du catalogue, sinon 0 ;
-    - `sold_at` illisible est ramené à la vente datée la plus récente, sinon à
-      l'instant courant, pour que la ligne compte quand même dans les KPI ;
+    - `sold_at` illisible est ramené à la vente datée la plus récente, sinon
+      à `1970-01-01T00:00:00+00:00` (valeur stable, jamais `datetime.now`) ;
     - `channel` manquant reprend la source du jeu de données.
 """
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from typing import Any
 
 import pandas as pd
@@ -37,6 +36,7 @@ from ml.utils.frames import (
 )
 
 KNOWN_SOURCES: tuple[str, ...] = ("manual", "csv", "excel")
+STABLE_UNKNOWN_SOLD_AT = pd.Timestamp("1970-01-01T00:00:00+00:00")
 
 IDENTITY_COLUMNS = ["id", "sku"]
 
@@ -157,5 +157,5 @@ def _drop_duplicate_sales(frame: pd.DataFrame) -> pd.DataFrame:
 def _fallback_date(sold_at: pd.Series) -> pd.Timestamp:
     latest = sold_at.max()
     if pd.isna(latest):
-        return pd.Timestamp(datetime.now(timezone.utc)).floor("s")
+        return STABLE_UNKNOWN_SOLD_AT
     return latest

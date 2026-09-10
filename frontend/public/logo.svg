@@ -1,0 +1,13 @@
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="40" height="40" rx="10" fill="url(#bizia-grad)" />
+  <path d="M10 28V18h4v10h-4zm8-6v6h4v-6h-4zm8 3v3h4v-3h-4z" fill="white" opacity="0.95"/>
+  <path d="M10 28h20" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+  <circle cx="30" cy="12" r="3" fill="#93c5fd"/>
+  <path d="M30 9v6M27 12h6" stroke="#1e40af" stroke-width="1.2" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="bizia-grad" x1="0" y1="0" x2="40" y2="40">
+      <stop stop-color="#2563eb"/>
+      <stop offset="1" stop-color="#4f46e5"/>
+    </linearGradient>
+  </defs>
+</svg>

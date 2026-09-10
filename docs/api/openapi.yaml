@@ -113,13 +113,55 @@ paths:
       responses:
         "200":
           description: Réponse
+  /api/auth/register:
+    post:
+      tags: [auth]
+      summary: Créer un compte et une session
+      responses:
+        "201":
+          description: Session créée
+  /api/auth/login:
+    post:
+      tags: [auth]
+      summary: Ouvrir une session
+      responses:
+        "200":
+          description: Session ouverte
+  /api/auth/google:
+    post:
+      tags: [auth]
+      summary: Ouvrir ou créer un compte avec Google
+      responses:
+        "200":
+          description: Session ouverte
+  /api/auth/me:
+    get:
+      tags: [auth]
+      summary: Utilisateur de la session
+      responses:
+        "200":
+          description: Utilisateur courant
+  /api/auth/logout:
+    post:
+      tags: [auth]
+      summary: Fermer la session
+      responses:
+        "204":
+          description: Session fermée
   /api/reports/generate:
     post:
       tags: [reports]
-      summary: Rapport MVP (JSON)
+      summary: Rapport PDF ou Word
+      parameters:
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum: [pdf, docx]
+            default: pdf
       responses:
         "200":
-          description: Synthèse
+          description: Rapport
 components:
   schemas:
     ProductIn:

@@ -75,6 +75,8 @@ export type AnalysisResult = {
   low_stock: LowStockItem[];
   trend: TrendPoint[];
   week_over_week: {
+    metric: "profit";
+    window_days: number;
     current_window_profit: number;
     previous_window_profit: number;
     delta: number;
@@ -92,6 +94,8 @@ export type IngestionResult = {
   source: SourceType;
   products_ingested: number;
   sales_ingested: number;
+  sales_skipped_unknown?: number;
+  sales_skipped_duplicate?: number;
 };
 
 export type ChatReply = {
