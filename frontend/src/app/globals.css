@@ -1243,43 +1243,13 @@ label {
   flex-wrap: wrap;
 }
 
-.import-hints {
-  margin: 0;
+.import-help__list {
+  margin: var(--space-md) 0;
   padding-left: 1.25rem;
-  color: var(--color-text-muted);
 }
 
-.import-hints li {
+.import-help__list li {
   margin-bottom: var(--space-sm);
-}
-
-.column-guide {
-  margin: var(--space-lg) 0;
-}
-
-.column-guide__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-md);
-  flex-wrap: wrap;
-  margin-bottom: var(--space-sm);
-}
-
-.column-guide__head h3 {
-  margin: 0;
-  font-size: 1rem;
-}
-
-.column-guide__aliases {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-xs);
-}
-
-.column-guide > .muted {
-  margin: var(--space-sm) 0 0;
-  font-size: 0.85rem;
 }
 
 .import-preview {

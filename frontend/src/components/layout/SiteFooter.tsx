@@ -45,7 +45,7 @@ export function SiteFooter() {
           <ul className="site-footer__list">
             <li>
               <Link href="/import" className="site-footer__link">
-                Colonnes attendues à l&apos;import
+                Importer un fichier
               </Link>
             </li>
             <li>

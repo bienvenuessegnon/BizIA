@@ -11,21 +11,8 @@ import { AppPageLayout } from "@/components/layout/AppPageLayout";
 import { Spinner } from "@/components/ui/Spinner";
 import { api } from "@/services/api";
 import type { IngestionPreview, IngestionResult } from "@/types";
-import {
-  ACCEPTED_EXTENSIONS,
-  FILE_INPUT_ACCEPT,
-  formatLabel,
-  isAcceptedDocument,
-} from "@/utils/fileFormats";
+import { FILE_INPUT_ACCEPT, formatLabel, isAcceptedDocument } from "@/utils/fileFormats";
 import { getApiErrorMessage } from "@/utils/apiError";
-import {
-  PRODUCT_COLUMNS,
-  PRODUCT_TEMPLATE_CSV,
-  SALE_COLUMNS,
-  SALE_TEMPLATE_CSV,
-  downloadCsvTemplate,
-  type ColumnDoc,
-} from "@/utils/importColumns";
 
 function plural(count: number, singular: string, plural = `${singular}s`): string {
   return `${count} ${count > 1 ? plural : singular}`;
@@ -116,7 +103,7 @@ export function ImportPanel() {
     <AppPageLayout
       eyebrow="Données"
       title="Import & export"
-      description="Importez un Excel, un CSV, un PDF ou une photo de votre tableau. BizIA en extrait vos produits et vos ventes, exactement comme si vous les aviez saisis à la main."
+      description="Déposez un Excel, un CSV, un PDF ou une photo. BizIA reconnaît vos produits et vos ventes, même si les titres de colonnes ne sont pas les mêmes partout."
     >
       <div className="card card--glass import-zone">
         <div
@@ -218,84 +205,30 @@ export function ImportPanel() {
         />
       )}
 
-      <div className="card card--glass">
-        <h2>Colonnes attendues</h2>
-        <p className="muted">
-          Majuscules, accents ou unité entre parenthèses : peu importe, «&nbsp;Prix unitaire
-          (FCFA)&nbsp;» et «&nbsp;prix_unitaire&nbsp;» sont compris de la même façon.
+      <div className="card card--glass import-help">
+        <h2>Que mettre dans le document ?</h2>
+        <p>
+          Un fichier de <strong>produits</strong>, un fichier de <strong>ventes</strong>, ou les deux
+          ensemble. Pas besoin d&apos;un modèle précis : les titres de colonnes, même écrits
+          autrement, sont compris.
         </p>
-
-        <ColumnTable
-          caption="Fichier de ventes"
-          columns={SALE_COLUMNS}
-          note="Sans colonne de prix, BizIA reprend le prix de vente du catalogue."
-          onDownload={() => downloadCsvTemplate("bizia-modele-ventes.csv", SALE_TEMPLATE_CSV)}
-        />
-        <ColumnTable
-          caption="Fichier de produits"
-          columns={PRODUCT_COLUMNS}
-          note="Une référence déjà présente est mise à jour plutôt que dupliquée."
-          onDownload={() => downloadCsvTemplate("bizia-modele-produits.csv", PRODUCT_TEMPLATE_CSV)}
-        />
-
-        <ul className="import-hints">
-          <li>Une vente dont la référence produit n&apos;existe pas dans votre catalogue est ignorée.</li>
-          <li>Fichiers acceptés : {ACCEPTED_EXTENSIONS.map((e) => `.${e}`).join(", ")}</li>
+        <ul className="import-help__list">
+          <li>
+            <strong>Produits</strong> : le nom, et si possible la référence, le prix de vente,
+            le coût et le stock.
+          </li>
+          <li>
+            <strong>Ventes</strong> : le produit, la quantité, et si possible le prix et la date.
+          </li>
         </ul>
+        <p className="muted">
+          Une vente n&apos;est enregistrée que si le produit existe déjà dans votre catalogue, ou
+          s&apos;il figure dans le même document. Un tableau vous est toujours proposé à relire
+          avant d&apos;enregistrer.
+        </p>
       </div>
 
       <ExportPanel />
     </AppPageLayout>
-  );
-}
-
-type ColumnTableProps = {
-  caption: string;
-  columns: ColumnDoc[];
-  note: string;
-  onDownload: () => void;
-};
-
-function ColumnTable({ caption, columns, note, onDownload }: ColumnTableProps) {
-  return (
-    <section className="column-guide">
-      <div className="column-guide__head">
-        <h3>{caption}</h3>
-        <Button variant="ghost" onClick={onDownload}>
-          Télécharger le modèle CSV
-        </Button>
-      </div>
-      <div className="table-wrap">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Information</th>
-              <th>Titres de colonne acceptés</th>
-              <th>Obligatoire</th>
-            </tr>
-          </thead>
-          <tbody>
-            {columns.map((column) => (
-              <tr key={column.field}>
-                <td>{column.label}</td>
-                <td className="column-guide__aliases">
-                  {column.aliases.map((alias) => (
-                    <code key={alias}>{alias}</code>
-                  ))}
-                </td>
-                <td>
-                  {column.required ? (
-                    <span className="table-tag table-tag--warn">Oui</span>
-                  ) : (
-                    <span className="muted">Optionnel</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <p className="muted">{note}</p>
-    </section>
   );
 }
