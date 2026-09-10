@@ -14,7 +14,7 @@ from ml.utils.numbers import format_amount, to_float
 
 _NO_ANALYSIS = (
     "Je n'ai pas encore d'analyse à commenter. "
-    "Saisissez ou importez des données, lancez l'analyse depuis le dashboard, "
+    "Saisissez ou importez des données, lancez l'analyse depuis le tableau de bord, "
     "puis reposez votre question."
 )
 
@@ -108,7 +108,7 @@ def _reply_top_profit(analysis: dict[str, Any]) -> str:
     best = ranking[0]
     return (
         f"Le produit qui rapporte le plus est {best.get('name')} "
-        f"(SKU {best.get('sku')}) : {format_amount(best.get('profit'))} de bénéfice, "
+        f"(réf. {best.get('sku')}) : {format_amount(best.get('profit'))} de bénéfice, "
         f"{format_amount(best.get('revenue'))} de chiffre d'affaires."
     )
 
