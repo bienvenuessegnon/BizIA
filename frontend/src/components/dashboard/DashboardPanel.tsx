@@ -59,6 +59,7 @@ export function DashboardPanel() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
   const [apiOffline, setApiOffline] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -110,6 +111,18 @@ export function DashboardPanel() {
     }
   }
 
+  async function handleDownloadPdf() {
+    setExportingPdf(true);
+    setActionError(null);
+    try {
+      await api.reports.download("pdf");
+    } catch (err) {
+      setActionError(getApiErrorMessage(err));
+    } finally {
+      setExportingPdf(false);
+    }
+  }
+
   const kpis = result?.kpis;
   const hasData = kpis && (kpis.sales_count > 0 || kpis.revenue > 0);
 
@@ -126,6 +139,14 @@ export function DashboardPanel() {
           </Button>
           <Button variant="secondary" onClick={loadSummary} disabled={loading}>
             Actualiser
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={handleDownloadPdf}
+            loading={exportingPdf}
+            disabled={!hasData || exportingPdf}
+          >
+            Télécharger le bilan PDF
           </Button>
         </>
       }

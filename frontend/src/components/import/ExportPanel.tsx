@@ -39,7 +39,8 @@ export function ExportPanel() {
         <div>
           <h2>Exporter l&apos;analyse</h2>
           <p className="muted">
-            Téléchargez la dernière analyse en PDF ou document Word.
+            Téléchargez le bilan complet avec indicateurs, graphiques, classements,
+            alertes et conseils.
           </p>
         </div>
       </div>

@@ -3,7 +3,10 @@
 Les assertions métier sont ajoutées au fur et à mesure de l'implémentation.
 """
 
+from io import BytesIO
+
 from fastapi.testclient import TestClient
+from pypdf import PdfReader
 
 
 def test_health(client: TestClient) -> None:
@@ -221,6 +224,14 @@ def test_chat_requires_analysis_then_answers(client: TestClient) -> None:
     assert pdf.status_code == 200
     assert pdf.headers["content-type"] == "application/pdf"
     assert pdf.content.startswith(b"%PDF")
+    reader = PdfReader(BytesIO(pdf.content))
+    extracted = "\n".join(page.extract_text() or "" for page in reader.pages)
+    assert len(reader.pages) >= 2
+    assert "Bilan exécutif" in extracted
+    assert "Évolution du chiffre d'affaires" in extracted
+    assert "Classement de rentabilité" in extracted
+    assert "Conseils et actions recommandées" in extracted
+    assert "Stocks à surveiller" in extracted
 
     docx = client.post("/api/reports/generate?format=docx")
     assert docx.status_code == 200
