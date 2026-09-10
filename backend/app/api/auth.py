@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Header
 
-from app.schemas.common import GoogleLoginIn, LoginIn, RegisterIn
+from app.schemas.common import LoginIn, RegisterIn
 from app.services import auth as auth_service
 from app.utils.errors import ApiError
 
@@ -27,11 +27,6 @@ def register(payload: RegisterIn) -> dict:
 @router.post("/login")
 def login(payload: LoginIn) -> dict:
     return auth_service.login(payload.email, payload.password)
-
-
-@router.post("/google")
-def google_login(payload: GoogleLoginIn) -> dict:
-    return auth_service.login_with_google(payload.credential)
 
 
 @router.get("/me")
