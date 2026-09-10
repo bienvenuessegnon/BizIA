@@ -127,13 +127,6 @@ paths:
       responses:
         "200":
           description: Session ouverte
-  /api/auth/google:
-    post:
-      tags: [auth]
-      summary: Ouvrir ou créer un compte avec Google
-      responses:
-        "200":
-          description: Session ouverte
   /api/auth/me:
     get:
       tags: [auth]

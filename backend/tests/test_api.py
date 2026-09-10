@@ -4,7 +4,6 @@ Les assertions métier sont ajoutées au fur et à mesure de l'implémentation.
 """
 
 from fastapi.testclient import TestClient
-import pytest
 
 
 def test_health(client: TestClient) -> None:
@@ -299,27 +298,6 @@ def test_new_account_has_no_business_data(client: TestClient) -> None:
     assert client.get("/api/products", headers=headers).json() == {"items": []}
     assert client.get("/api/sales", headers=headers).json() == {"items": []}
     assert client.get("/api/analysis/summary", headers=headers).json() == {"result": None}
-
-
-def test_google_login_creates_account(
-    client: TestClient, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    from app.services import auth as auth_service
-
-    monkeypatch.setattr(auth_service.settings, "google_client_id", "google-client-id")
-    monkeypatch.setattr(
-        auth_service.id_token,
-        "verify_oauth2_token",
-        lambda credential, request, audience: {
-            "sub": "google-123",
-            "email": "gmail@example.com",
-            "email_verified": True,
-            "name": "Gina Mail",
-        },
-    )
-    response = client.post("/api/auth/google", json={"credential": "x" * 30})
-    assert response.status_code == 200
-    assert response.json()["user"]["email"] == "gmail@example.com"
 
 
 def test_import_skips_unknown_sku(client: TestClient) -> None:

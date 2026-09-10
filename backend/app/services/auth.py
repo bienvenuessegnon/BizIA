@@ -13,12 +13,9 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from pwdlib import PasswordHash
-from google.auth.transport import requests as google_requests
-from google.oauth2 import id_token
 
 from app.services.store import get_store
 from app.utils.errors import ApiError
-from app.utils.settings import settings
 
 password_hash = PasswordHash.recommended()
 SESSION_TTL = timedelta(days=7)
@@ -72,41 +69,6 @@ def login(email: str, password: str) -> dict[str, Any]:
     stored_hash = str(user.get("password_hash") or "") if user else ""
     if not user or not stored_hash or not password_hash.verify(password, stored_hash):
         raise ApiError(401, "invalid_credentials", "E-mail ou mot de passe incorrect.")
-    return _new_session(user)
-
-
-def login_with_google(credential: str) -> dict[str, Any]:
-    if not settings.google_client_id:
-        raise ApiError(
-            503,
-            "google_not_configured",
-            "La connexion Google n'est pas encore configurée.",
-        )
-    try:
-        claims = id_token.verify_oauth2_token(
-            credential, google_requests.Request(), settings.google_client_id
-        )
-    except ValueError as exc:
-        raise ApiError(401, "invalid_google_token", "Jeton Google invalide.") from exc
-    if not claims.get("email_verified"):
-        raise ApiError(401, "unverified_google_email", "Adresse Google non vérifiée.")
-
-    email = str(claims["email"]).strip().lower()
-    store = get_store()
-    user = store.find_user_by_email(email)
-    if not user:
-        full_name = str(claims.get("name") or email.split("@")[0]).strip()
-        parts = full_name.split(maxsplit=1)
-        user = store.add_user(
-            {
-                "id": str(uuid.uuid4()),
-                "first_name": parts[0],
-                "last_name": parts[1] if len(parts) > 1 else "",
-                "email": email,
-                "google_sub": str(claims["sub"]),
-                "password_hash": None,
-            }
-        )
     return _new_session(user)
 
 

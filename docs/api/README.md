@@ -106,10 +106,6 @@ Le mot de passe est haché avec Argon2 et le store ne conserve que l'empreinte
 SHA-256 du jeton. `GET /api/auth/me` et `POST /api/auth/logout` utilisent
 `Authorization: Bearer <token>`.
 
-`POST /api/auth/google` accepte un credential Google Identity Services et ouvre
-ou crée le compte Gmail. `GOOGLE_CLIENT_ID` (backend) et
-`NEXT_PUBLIC_GOOGLE_CLIENT_ID` (frontend) doivent contenir le même client OAuth.
-
 Toutes les routes métier exigent cette session. Produits, ventes et dernière
 analyse sont stockés dans un espace propre à l'identifiant du compte : un
 nouveau compte démarre donc avec des listes et un dashboard vides.
