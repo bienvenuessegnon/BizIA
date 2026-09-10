@@ -17,18 +17,98 @@ from typing import Any
 import pandas as pd
 
 COLUMN_ALIASES: dict[str, set[str]] = {
-    "sku": {"sku", "code", "ref", "reference"},
-    "name": {"name", "nom", "produit", "product", "libelle"},
-    "category": {"category", "categorie", "cat"},
-    "unit_cost": {"unit_cost", "cout", "cost", "prix_achat"},
-    "unit_price": {"unit_price", "prix", "price", "prix_vente"},
-    "stock_quantity": {"stock_quantity", "stock", "qte_stock"},
-    "low_stock_threshold": {"low_stock_threshold", "seuil", "seuil_stock"},
-    "product_sku": {"product_sku", "sku", "code", "produit"},
-    "quantity": {"quantity", "qte", "quantite", "qty"},
-    "sold_at": {"sold_at", "date", "jour", "timestamp"},
+    "sku": {"sku", "code", "ref", "reference", "code_produit", "reference_produit", "sku_produit"},
+    "name": {"name", "nom", "produit", "product", "libelle", "designation", "intitule"},
+    "category": {"category", "categorie", "cat", "famille", "rayon"},
+    "unit_cost": {
+        "unit_cost",
+        "cout",
+        "cost",
+        "prix_achat",
+        "cout_unitaire",
+        "cout_unite",
+        "cout_achat",
+        "prix_de_revient",
+        "prix_revient",
+        "cost_price",
+        "purchase_price",
+    },
+    "unit_price": {
+        "unit_price",
+        "prix",
+        "price",
+        "prix_vente",
+        "prix_unitaire",
+        "prix_unite",
+        "prix_u",
+        "pu",
+        "prix_de_vente",
+        "prix_vente_unitaire",
+        "prix_unitaire_vente",
+        "montant_unitaire",
+        "selling_price",
+        "unit_selling_price",
+    },
+    "stock_quantity": {"stock_quantity", "stock", "qte_stock", "quantite_stock", "stock_actuel"},
+    "low_stock_threshold": {
+        "low_stock_threshold",
+        "seuil",
+        "seuil_stock",
+        "seuil_alerte",
+        "stock_minimum",
+    },
+    "product_sku": {
+        "product_sku",
+        "sku",
+        "code",
+        "produit",
+        "ref",
+        "reference",
+        "code_produit",
+        "reference_produit",
+        "sku_produit",
+    },
+    "quantity": {
+        "quantity",
+        "qte",
+        "quantite",
+        "qty",
+        "quantite_vendue",
+        "qte_vendue",
+        "quantity_sold",
+    },
+    "sold_at": {
+        "sold_at",
+        "date",
+        "jour",
+        "timestamp",
+        "date_vente",
+        "date_de_vente",
+        "sale_date",
+    },
     "channel": {"channel", "canal", "source"},
 }
+
+# Mentions d'unité ou de devise accolées à un en-tête, sans valeur pour le mapping.
+_NOISE_TOKENS = frozenset(
+    {
+        "fcfa",
+        "cfa",
+        "xof",
+        "f",
+        "fr",
+        "frs",
+        "franc",
+        "francs",
+        "eur",
+        "euro",
+        "euros",
+        "usd",
+        "ht",
+        "ttc",
+        "en",
+    }
+)
 
 PRODUCT_FIELDS = (
     "sku",
@@ -461,6 +541,14 @@ def _strip_header(column: Any) -> str:
 
 
 def _normalize(value: str) -> str:
+    """En-tête → clé comparable aux alias.
+
+    Les tableaux réels annotent volontiers l'unité de la colonne
+    (« Prix unitaire (FCFA) », « prix_ht ») : ces mentions sont retirées pour
+    que la colonne reste reconnue.
+    """
     decomposed = unicodedata.normalize("NFKD", _strip_header(value).lower())
     without_accents = "".join(char for char in decomposed if not unicodedata.combining(char))
-    return without_accents.replace(" ", "_").replace("-", "_")
+    tokens = [token for token in re.split(r"[^a-z0-9]+", without_accents) if token]
+    meaningful = [token for token in tokens if token not in _NOISE_TOKENS]
+    return "_".join(meaningful or tokens)

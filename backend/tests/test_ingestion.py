@@ -85,6 +85,49 @@ def test_french_aliases(tmp_path: Path) -> None:
     assert sales[0]["channel"] == "csv"
 
 
+def test_unit_price_aliases(tmp_path: Path) -> None:
+    """`prix_unitaire` est l'en-tête que les utilisateurs écrivent le plus souvent."""
+    path = tmp_path / "ventes.csv"
+    path.write_text("sku,quantite,prix_unitaire,date\nPiment,4,250,2026-09-01\n", encoding="utf-8")
+    products, sales = parse_tabular(str(path), "ventes.csv")
+    assert products == []
+    assert sales[0]["product_sku"] == "Piment"
+    assert sales[0]["quantity"] == 4
+    assert sales[0]["unit_price"] == 250
+    assert sales[0]["sold_at"] == "2026-09-01"
+
+
+@pytest.mark.parametrize(
+    "header",
+    ["prix_unitaire", "prix unitaire", "Prix Unitaire", "prix_unite", "pu", "unit price"],
+)
+def test_unit_price_header_variants(tmp_path: Path, header: str) -> None:
+    path = tmp_path / "ventes.csv"
+    path.write_text(f"sku,quantite,{header},date\nPiment,4,250,2026-09-01\n", encoding="utf-8")
+    _products, sales = parse_tabular(str(path), "ventes.csv")
+    assert sales[0]["unit_price"] == 250
+
+
+def test_unit_cost_aliases(tmp_path: Path) -> None:
+    path = tmp_path / "ventes.csv"
+    path.write_text(
+        "sku,quantite,prix_unitaire,cout_unitaire,date\nPiment,4,250,180,2026-09-01\n",
+        encoding="utf-8",
+    )
+    _products, sales = parse_tabular(str(path), "ventes.csv")
+    assert sales[0]["unit_price"] == 250
+    assert sales[0]["unit_cost"] == 180
+
+
+def test_product_catalog_unit_price_alias(tmp_path: Path) -> None:
+    """Un catalogue en `prix_unitaire` renseigne bien le prix de vente."""
+    path = tmp_path / "produits.csv"
+    path.write_text("sku,nom,prix_unitaire,stock\nPiment,Piment,250,10\n", encoding="utf-8")
+    products, sales = parse_tabular(str(path), "produits.csv")
+    assert sales == []
+    assert products[0]["unit_price"] == 250
+
+
 def test_unsupported_type(tmp_path: Path) -> None:
     path = tmp_path / "notes.docx"
     path.write_bytes(b"PK")
