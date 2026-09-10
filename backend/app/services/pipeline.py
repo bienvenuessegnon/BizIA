@@ -10,12 +10,16 @@ from typing import Any
 
 from ml.pipeline import analyze
 
-from app.services.store import get_store
+from app.services.store import get_store, get_user_store
 
 
-def run_analysis(source: str | None = None, include_forecast: bool = False) -> dict[str, Any]:
+def run_analysis(
+    source: str | None = None,
+    include_forecast: bool = False,
+    user_id: str | None = None,
+) -> dict[str, Any]:
     """store.as_dataset() → ml.analyze() → store.save_analysis()."""
-    store = get_store()
+    store = get_user_store(user_id) if user_id else get_store()
     result = analyze(store.as_dataset(source), include_forecast=include_forecast)
     store.save_analysis(result)
     return result

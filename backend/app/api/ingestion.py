@@ -1,10 +1,11 @@
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, File, UploadFile
+from fastapi import APIRouter, Depends, File, UploadFile
 
+from app.api.auth import current_user
 from app.services.ingestion import IngestionError, parse_tabular
-from app.services.store import get_store
+from app.services.store import get_user_store
 from app.utils.errors import ApiError
 from app.utils.settings import settings
 
@@ -12,7 +13,9 @@ router = APIRouter()
 
 
 @router.post("/files")
-async def upload_file(file: UploadFile = File(...)) -> dict:
+async def upload_file(
+    file: UploadFile = File(...), user: dict = Depends(current_user)
+) -> dict:
     filename = Path(file.filename or "upload.bin").name
     payload = await file.read()
     if not payload:
@@ -31,7 +34,7 @@ async def upload_file(file: UploadFile = File(...)) -> dict:
 
     suffix = Path(filename).suffix.lower()
     source = "excel" if suffix in {".xlsx", ".xls"} else "csv"
-    stats = get_store().extend_dataset(products, sales, source=source)
+    stats = get_user_store(user["id"]).extend_dataset(products, sales, source=source)
     return {
         "status": "accepted",
         "filename": filename,

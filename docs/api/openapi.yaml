@@ -127,6 +127,13 @@ paths:
       responses:
         "200":
           description: Session ouverte
+  /api/auth/google:
+    post:
+      tags: [auth]
+      summary: Ouvrir ou créer un compte avec Google
+      responses:
+        "200":
+          description: Session ouverte
   /api/auth/me:
     get:
       tags: [auth]
@@ -144,14 +151,14 @@ paths:
   /api/reports/generate:
     post:
       tags: [reports]
-      summary: Rapport JSON, PDF ou Word
+      summary: Rapport PDF ou Word
       parameters:
         - in: query
           name: format
           schema:
             type: string
-            enum: [json, pdf, docx]
-            default: json
+            enum: [pdf, docx]
+            default: pdf
       responses:
         "200":
           description: Rapport

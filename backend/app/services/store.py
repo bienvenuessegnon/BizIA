@@ -17,6 +17,7 @@ from typing import Any
 from app.utils.settings import settings
 
 _store: "JsonStore | None" = None
+_user_stores: dict[str, "JsonStore"] = {}
 
 _EMPTY: dict[str, Any] = {
     "products": [],
@@ -355,7 +356,17 @@ def get_store() -> JsonStore:
     return _store
 
 
+def get_user_store(user_id: str) -> JsonStore:
+    """Store métier isolé d'un compte authentifié."""
+    key = str(uuid.UUID(user_id))
+    if key not in _user_stores:
+        base = get_store().path
+        _user_stores[key] = JsonStore(base.parent / "users" / f"{key}.json")
+    return _user_stores[key]
+
+
 def set_store(store: JsonStore | None) -> None:
     """Injection utilisée par les tests."""
     global _store
     _store = store
+    _user_stores.clear()

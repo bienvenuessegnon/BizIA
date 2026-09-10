@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     upload_dir: str = "data/uploads"
     database_path: str = "data/local/bizia.json"
     llm_provider: str = "none"
+    google_client_id: str = ""
     default_low_stock_threshold: float = 5
 
     @property

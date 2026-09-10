@@ -18,6 +18,7 @@ type AuthContextValue = {
   isAuthenticated: boolean;
   signup: (payload: SignupPayload) => Promise<void>;
   login: (payload: LoginPayload) => Promise<void>;
+  loginWithGoogle: (credential: string) => Promise<void>;
   logout: () => Promise<void>;
 };
 
@@ -44,6 +45,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(session.user);
   }, []);
 
+  const loginWithGoogle = useCallback(async (credential: string) => {
+    const session = await authService.loginWithGoogle(credential);
+    setUser(session.user);
+  }, []);
+
   const logout = useCallback(async () => {
     await authService.logout();
     setUser(null);
@@ -56,9 +62,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: !!user,
       signup,
       login,
+      loginWithGoogle,
       logout,
     }),
-    [user, isLoading, signup, login, logout],
+    [user, isLoading, signup, login, loginWithGoogle, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

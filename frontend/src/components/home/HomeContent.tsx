@@ -14,7 +14,7 @@ const FEATURES = [
 const STATS = [
   { value: "CSV / Excel", label: "formats d'import du MVP" },
   { value: "1 pipeline", label: "saisie et import partagent le store" },
-  { value: "JSON", label: "rapport exportable aujourd'hui" },
+  { value: "PDF / Word", label: "rapports prêts à partager" },
 ];
 
 const STEPS = [

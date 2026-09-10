@@ -1,13 +1,14 @@
 from io import BytesIO
 
 from docx import Document
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import Response
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 
-from app.services.store import get_store
+from app.api.auth import current_user
+from app.services.store import get_user_store
 from app.utils.errors import ApiError
 
 router = APIRouter()
@@ -73,8 +74,11 @@ def _docx(report: dict) -> bytes:
 
 
 @router.post("/generate")
-def generate_report(format: str = Query(default="json", pattern="^(json|pdf|docx)$")):
-    analysis = get_store().get_last_analysis()
+def generate_report(
+    format: str = Query(default="pdf", pattern="^(pdf|docx)$"),
+    user: dict = Depends(current_user),
+):
+    analysis = get_user_store(user["id"]).get_last_analysis()
     if analysis is None:
         raise ApiError(
             400,
@@ -94,4 +98,4 @@ def generate_report(format: str = Query(default="json", pattern="^(json|pdf|docx
             media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             headers={"Content-Disposition": 'attachment; filename="bizia-rapport.docx"'},
         )
-    return {"status": "ok", "report": report}
+    raise ApiError(422, "unsupported_report_format", "Choisissez PDF ou Word.")

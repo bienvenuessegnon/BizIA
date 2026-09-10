@@ -8,7 +8,6 @@ import { api } from "@/services/api";
 import { getApiErrorMessage } from "@/utils/apiError";
 
 const FORMATS = [
-  { value: "json", label: "JSON" },
   { value: "pdf", label: "PDF" },
   { value: "docx", label: "Word" },
 ] as const;
@@ -40,7 +39,7 @@ export function ExportPanel() {
         <div>
           <h2>Exporter l&apos;analyse</h2>
           <p className="muted">
-            Téléchargez la dernière analyse en JSON, PDF ou document Word.
+            Téléchargez la dernière analyse en PDF ou document Word.
           </p>
         </div>
       </div>

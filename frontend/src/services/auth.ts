@@ -100,6 +100,16 @@ export async function login(payload: LoginPayload): Promise<AuthSession> {
   return session;
 }
 
+export async function loginWithGoogle(credential: string): Promise<AuthSession> {
+  const data = await authRequest<ApiSession>("/api/auth/google", {
+    method: "POST",
+    body: JSON.stringify({ credential }),
+  });
+  const session = mapSession(data);
+  persistSession(session);
+  return session;
+}
+
 export async function logout(): Promise<void> {
   const session = getStoredSession();
   if (session) {

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Header
 
-from app.schemas.common import LoginIn, RegisterIn
+from app.schemas.common import GoogleLoginIn, LoginIn, RegisterIn
 from app.services import auth as auth_service
 from app.utils.errors import ApiError
 
@@ -11,6 +11,10 @@ def _bearer(authorization: str | None) -> str:
     if not authorization or not authorization.startswith("Bearer "):
         raise ApiError(401, "missing_token", "Jeton d'authentification manquant.")
     return authorization.removeprefix("Bearer ").strip()
+
+
+def current_user(authorization: str | None = Header(default=None)) -> dict[str, str]:
+    return auth_service.authenticate(_bearer(authorization))
 
 
 @router.post("/register", status_code=201)
@@ -25,9 +29,14 @@ def login(payload: LoginIn) -> dict:
     return auth_service.login(payload.email, payload.password)
 
 
+@router.post("/google")
+def google_login(payload: GoogleLoginIn) -> dict:
+    return auth_service.login_with_google(payload.credential)
+
+
 @router.get("/me")
 def me(authorization: str | None = Header(default=None)) -> dict:
-    return {"user": auth_service.authenticate(_bearer(authorization))}
+    return {"user": current_user(authorization)}
 
 
 @router.post("/logout", status_code=204)

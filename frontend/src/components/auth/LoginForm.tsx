@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { AuthCard } from "@/components/auth/AuthCard";
+import { GoogleLoginButton } from "@/components/auth/GoogleLoginButton";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -100,6 +101,7 @@ export function LoginForm() {
         </p>
       }
     >
+      <GoogleLoginButton />
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
         {serverError && <Alert variant="error">{serverError}</Alert>}
 

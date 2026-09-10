@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState, type ReactNode } from "react";
 import { BizIALogo } from "@/components/brand/BizIALogo";
 import { ApiStatusBanner } from "@/components/layout/ApiStatusBanner";
 import { SiteFooter } from "@/components/layout/SiteFooter";
@@ -17,14 +18,27 @@ const NAV_LINKS = [
 ] as const;
 
 const AUTH_ROUTES = ["/connexion", "/inscription"];
+const PROTECTED_ROUTES = ["/produits", "/ventes", "/import", "/dashboard", "/chat"];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, isLoading, logout, isAuthenticated } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const isAuthPage = pathname != null && AUTH_ROUTES.includes(pathname);
   const isHome = pathname === "/";
+
+  useEffect(() => {
+    if (
+      !isLoading &&
+      !isAuthenticated &&
+      pathname != null &&
+      PROTECTED_ROUTES.includes(pathname)
+    ) {
+      router.replace("/connexion");
+    }
+  }, [isAuthenticated, isLoading, pathname, router]);
 
   async function handleLogout() {
     await logout();

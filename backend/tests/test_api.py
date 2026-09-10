@@ -4,6 +4,7 @@ Les assertions métier sont ajoutées au fur et à mesure de l'implémentation.
 """
 
 from fastapi.testclient import TestClient
+import pytest
 
 
 def test_health(client: TestClient) -> None:
@@ -211,12 +212,6 @@ def test_chat_requires_analysis_then_answers(client: TestClient) -> None:
     assert "RIZ" in body["reply"].upper() or "Riz" in body["reply"]
     assert "status" not in body
 
-    report = client.post("/api/reports/generate")
-    assert report.status_code == 200
-    payload = report.json()
-    assert payload["status"] == "ok"
-    assert payload["report"]["kpis"]["sales_count"] == 16
-
     pdf = client.post("/api/reports/generate?format=pdf")
     assert pdf.status_code == 200
     assert pdf.headers["content-type"] == "application/pdf"
@@ -276,6 +271,55 @@ def test_server_auth_round_trip(client: TestClient) -> None:
     assert client.get("/api/auth/me", headers=headers).json()["user"]["first_name"] == "Ada"
     assert client.post("/api/auth/logout", headers=headers).status_code == 204
     assert client.get("/api/auth/me", headers=headers).status_code == 401
+
+
+def test_new_account_has_no_business_data(client: TestClient) -> None:
+    created = client.post(
+        "/api/products",
+        json={
+            "sku": "PRIVATE",
+            "name": "Produit privé",
+            "unit_cost": 1,
+            "unit_price": 2,
+            "stock_quantity": 1,
+        },
+    )
+    assert created.status_code == 201
+
+    second = client.post(
+        "/api/auth/register",
+        json={
+            "first_name": "Nouveau",
+            "last_name": "Compte",
+            "email": "nouveau@example.com",
+            "password": "mot-de-passe-solide",
+        },
+    ).json()
+    headers = {"Authorization": f"Bearer {second['token']}"}
+    assert client.get("/api/products", headers=headers).json() == {"items": []}
+    assert client.get("/api/sales", headers=headers).json() == {"items": []}
+    assert client.get("/api/analysis/summary", headers=headers).json() == {"result": None}
+
+
+def test_google_login_creates_account(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from app.services import auth as auth_service
+
+    monkeypatch.setattr(auth_service.settings, "google_client_id", "google-client-id")
+    monkeypatch.setattr(
+        auth_service.id_token,
+        "verify_oauth2_token",
+        lambda credential, request, audience: {
+            "sub": "google-123",
+            "email": "gmail@example.com",
+            "email_verified": True,
+            "name": "Gina Mail",
+        },
+    )
+    response = client.post("/api/auth/google", json={"credential": "x" * 30})
+    assert response.status_code == 200
+    assert response.json()["user"]["email"] == "gmail@example.com"
 
 
 def test_import_skips_unknown_sku(client: TestClient) -> None:
