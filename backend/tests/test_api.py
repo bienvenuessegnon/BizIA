@@ -336,6 +336,162 @@ def test_import_csv_keeps_unit_price_and_revenue(client: TestClient) -> None:
     assert analysis["kpis"]["revenue"] == 1000.0
 
 
+def test_import_preview_does_not_write_before_confirmation(client: TestClient) -> None:
+    client.post(
+        "/api/products",
+        json={
+            "sku": "Piment",
+            "name": "Piment",
+            "unit_cost": 150,
+            "unit_price": 250,
+            "stock_quantity": 20,
+        },
+    )
+    csv_content = "sku,quantite,prix_unitaire,date\nPiment,4,250,2026-09-01\n"
+
+    preview = client.post(
+        "/api/ingestion/preview",
+        files={"file": ("ventes.csv", csv_content.encode(), "text/csv")},
+    )
+
+    assert preview.status_code == 200
+    body = preview.json()
+    assert body["status"] == "preview"
+    assert body["extraction_method"] == "local"
+    assert body["document_type"] == "sales"
+    assert body["sales"][0]["unit_price"] == 250
+    assert client.get("/api/sales").json()["items"] == []
+
+    committed = client.post(
+        "/api/ingestion/commit",
+        json={
+            "filename": body["filename"],
+            "source": body["source"],
+            "products": body["products"],
+            "sales": body["sales"],
+        },
+    )
+    assert committed.status_code == 200
+    assert committed.json()["sales_ingested"] == 1
+    assert client.get("/api/sales").json()["items"][0]["unit_price"] == 250
+
+
+def test_import_preview_can_be_edited_before_confirmation(client: TestClient) -> None:
+    client.post(
+        "/api/products",
+        json={
+            "sku": "Piment",
+            "name": "Piment",
+            "unit_cost": 150,
+            "unit_price": 250,
+            "stock_quantity": 20,
+        },
+    )
+    committed = client.post(
+        "/api/ingestion/commit",
+        json={
+            "filename": "reconnaissance.pdf",
+            "source": "pdf",
+            "products": [],
+            "sales": [
+                {
+                    "product_sku": "Piment",
+                    "quantity": 6,
+                    "unit_price": 300,
+                    "sold_at": "2026-09-05",
+                }
+            ],
+        },
+    )
+    assert committed.status_code == 200
+    sale = client.get("/api/sales").json()["items"][0]
+    assert sale["quantity"] == 6
+    assert sale["unit_price"] == 300
+    assert sale["channel"] == "pdf"
+
+
+def test_import_preview_pdf_uses_gemini_when_enabled(
+    client: TestClient, monkeypatch
+) -> None:
+    from app.api import ingestion
+
+    client.post(
+        "/api/products",
+        json={
+            "sku": "PIMENT",
+            "name": "Piment",
+            "unit_cost": 150,
+            "unit_price": 250,
+            "stock_quantity": 20,
+        },
+    )
+    extracted = {
+        "document_type": "sales",
+        "products": [],
+        "sales": [
+            {
+                "product_sku": "PIMENT",
+                "quantity": 4,
+                "unit_price": 250,
+                "sold_at": "2026-09-01",
+            }
+        ],
+        "warnings": ["Date confirmée depuis le texte."],
+    }
+    called = {}
+
+    def fake_extract(payload, mime_type, filename, catalog):
+        called.update(
+            payload=payload,
+            mime_type=mime_type,
+            filename=filename,
+            catalog=catalog,
+        )
+        return extracted
+
+    monkeypatch.setattr(ingestion, "gemini_enabled", lambda: True)
+    monkeypatch.setattr(ingestion, "extract_document_with_gemini", fake_extract)
+
+    response = client.post(
+        "/api/ingestion/preview",
+        files={"file": ("notes.pdf", b"%PDF-fake-for-mock", "application/pdf")},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["extraction_method"] == "gemini"
+    assert body["sales"][0]["channel"] == "pdf"
+    assert body["warnings"] == ["Date confirmée depuis le texte."]
+    assert called["mime_type"] == "application/pdf"
+    assert called["catalog"][0]["sku"] == "PIMENT"
+    assert client.get("/api/sales").json()["items"] == []
+
+
+def test_import_commit_rejects_empty_or_invalid_rows(client: TestClient) -> None:
+    empty = client.post(
+        "/api/ingestion/commit",
+        json={
+            "filename": "vide.pdf",
+            "source": "pdf",
+            "products": [],
+            "sales": [],
+        },
+    )
+    assert empty.status_code == 422
+    assert empty.json()["error"]["code"] == "empty_import"
+
+    invalid = client.post(
+        "/api/ingestion/commit",
+        json={
+            "filename": "incorrect.pdf",
+            "source": "pdf",
+            "products": [],
+            "sales": [{"product_sku": "", "quantity": 0}],
+        },
+    )
+    assert invalid.status_code == 422
+
+
 def test_import_csv_without_price_column_uses_catalog(client: TestClient) -> None:
     client.post(
         "/api/products",

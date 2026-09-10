@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     gemini_api_key: str = Field(default="", repr=False)
     gemini_model: str = "gemini-2.5-flash"
     gemini_enrich_analysis: bool = True
+    max_upload_bytes: int = 20 * 1024 * 1024
     default_low_stock_threshold: float = 5
     web_dist: str = "frontend/out"
 

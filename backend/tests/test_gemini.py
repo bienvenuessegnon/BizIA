@@ -184,3 +184,73 @@ def test_client_is_rebuilt_when_the_key_changes(monkeypatch) -> None:
 
     assert first is not second
     assert second.key == "autre-cle"
+
+
+def test_document_extraction_sends_file_and_catalog(monkeypatch) -> None:
+    _enable(monkeypatch)
+    response = SimpleNamespace(
+        text=json.dumps(
+            {
+                "document_type": "sales",
+                "products": [],
+                "sales": [
+                    {
+                        "product_sku": "PIMENT",
+                        "quantity": 4,
+                        "unit_price": 250,
+                        "sold_at": "2026-09-01",
+                    }
+                ],
+                "warnings": [],
+            }
+        )
+    )
+    generate = Mock(return_value=response)
+    monkeypatch.setattr(
+        gemini,
+        "_client",
+        lambda: SimpleNamespace(models=SimpleNamespace(generate_content=generate)),
+    )
+
+    result = gemini.extract_document_with_gemini(
+        b"%PDF-content",
+        "application/pdf",
+        "ventes.pdf",
+        [{"sku": "PIMENT", "name": "Piment", "unit_price": 250, "unit_cost": 150}],
+    )
+
+    assert result is not None
+    assert result["sales"][0]["unit_price"] == 250
+    call = generate.call_args.kwargs
+    assert call["model"] == gemini.settings.gemini_model
+    assert call["contents"][1].inline_data.data == b"%PDF-content"
+    assert "PIMENT" in call["contents"][0]
+    assert "toutes les pages" in call["contents"][0]
+    assert call["config"]["response_mime_type"] == "application/json"
+
+
+def test_invalid_document_extraction_is_rejected(monkeypatch) -> None:
+    _enable(monkeypatch)
+    invalid = {
+        "document_type": "sales",
+        "products": [],
+        "sales": [{"product_sku": "PIMENT", "quantity": 0}],
+        "warnings": [],
+    }
+    monkeypatch.setattr(
+        gemini,
+        "_client",
+        lambda: SimpleNamespace(
+            models=SimpleNamespace(
+                generate_content=Mock(
+                    return_value=SimpleNamespace(text=json.dumps(invalid))
+                )
+            )
+        ),
+    )
+    assert (
+        gemini.extract_document_with_gemini(
+            b"image", "image/jpeg", "note.jpg", []
+        )
+        is None
+    )
