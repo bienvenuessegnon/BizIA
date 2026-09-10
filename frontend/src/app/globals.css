@@ -460,6 +460,17 @@ p {
   color: #64748b;
 }
 
+select.field__input {
+  appearance: none;
+  padding-right: 2.5rem;
+  cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 1.25rem) 55%, calc(100% - 1rem) 55%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
 .field__input:hover {
   border-color: #b8c4d4;
 }
@@ -535,6 +546,12 @@ p {
 
 .alert__body {
   margin: 0;
+}
+
+.alert__link {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
 }
 
 .alert--success {
@@ -995,6 +1012,26 @@ label {
   background: var(--color-surface-hover);
 }
 
+/* `.table-wrap` défile horizontalement : mieux vaut cela qu'une date sur quatre lignes. */
+.data-table td--nowrap {
+  white-space: nowrap;
+}
+
+.data-table tfoot th,
+.data-table tfoot td {
+  border-bottom: none;
+  border-top: 2px solid var(--color-border);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.data-table tfoot th {
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
 .data-table code {
   font-size: 0.85em;
   background: var(--color-bg-elevated);
@@ -1221,6 +1258,35 @@ label {
 
 .import-hints li {
   margin-bottom: var(--space-sm);
+}
+
+.column-guide {
+  margin: var(--space-lg) 0;
+}
+
+.column-guide__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-sm);
+}
+
+.column-guide__head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.column-guide__aliases {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.column-guide > .muted {
+  margin: var(--space-sm) 0 0;
+  font-size: 0.85rem;
 }
 
 .dropzone__icon {
