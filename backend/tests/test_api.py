@@ -12,6 +12,12 @@ def test_health(client: TestClient) -> None:
     assert response.json()["status"] == "ok"
 
 
+def test_root_points_to_docs(client: TestClient) -> None:
+    response = client.get("/")
+    assert response.status_code == 200
+    assert response.json()["docs"] == "/docs"
+
+
 def test_contract_routes_exist(client: TestClient) -> None:
     assert client.get("/api/products").status_code == 200
     assert client.get("/api/sales").status_code == 200

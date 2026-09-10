@@ -49,6 +49,17 @@ async def validation_error_handler(_request: Request, exc: RequestValidationErro
     )
 
 
+@app.get("/")
+def root() -> dict[str, str]:
+    """L'interface est un service séparé : la racine de l'API sert de repère."""
+    return {
+        "service": "bizia-backend",
+        "message": "API BizIA. L'interface web est déployée séparément.",
+        "docs": "/docs",
+        "health": "/health",
+    }
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok", "service": "bizia-backend"}
