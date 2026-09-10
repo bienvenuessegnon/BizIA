@@ -2,7 +2,15 @@
  * Client HTTP unique du frontend (contrat figé avec le backend).
  */
 
-import type { Alert, AnalysisResult, ChatReply, IngestionResult, Product, Sale } from "@/types";
+import type {
+  Alert,
+  AnalysisResult,
+  ChatReply,
+  IngestionPreview,
+  IngestionResult,
+  Product,
+  Sale,
+} from "@/types";
 import { getStoredSession } from "@/services/auth";
 
 // Vide quand l'API et le site partagent la même origine (déploiement en un service).
@@ -77,6 +85,19 @@ export const api = {
     form.append("file", file);
     return request<IngestionResult>("/api/ingestion/files", { method: "POST", body: form });
   },
+  previewFile: (file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    return request<IngestionPreview>("/api/ingestion/preview", {
+      method: "POST",
+      body: form,
+    });
+  },
+  commitImport: (preview: Omit<IngestionPreview, "status" | "document_type" | "extraction_method" | "warnings">) =>
+    request<IngestionResult>("/api/ingestion/commit", {
+      method: "POST",
+      body: JSON.stringify(preview),
+    }),
   runAnalysis: () => request<{ result: AnalysisResult | null }>("/api/analysis/run", { method: "POST" }),
   summary: () => request<{ result: AnalysisResult | null }>("/api/analysis/summary"),
   alerts: () => request<{ items: Alert[] }>("/api/alerts"),

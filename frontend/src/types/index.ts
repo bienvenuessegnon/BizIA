@@ -98,6 +98,36 @@ export type IngestionResult = {
   sales_skipped_duplicate?: number;
 };
 
+export type ImportedProductRow = {
+  sku: string;
+  name?: string | null;
+  category?: string | null;
+  unit_cost?: number | null;
+  unit_price?: number | null;
+  stock_quantity?: number | null;
+  low_stock_threshold?: number | null;
+};
+
+export type ImportedSaleRow = {
+  product_sku: string;
+  quantity: number;
+  unit_price?: number | null;
+  unit_cost?: number | null;
+  sold_at?: string | null;
+  channel?: string | null;
+};
+
+export type IngestionPreview = {
+  status: "preview";
+  filename: string;
+  source: "csv" | "excel" | "pdf" | "image";
+  document_type: "sales" | "products" | "mixed" | "unknown";
+  extraction_method: "local" | "gemini";
+  products: ImportedProductRow[];
+  sales: ImportedSaleRow[];
+  warnings: string[];
+};
+
 export type ChatReply = {
   reply: string;
   grounded: boolean;

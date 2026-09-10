@@ -4,12 +4,13 @@ import Link from "next/link";
 import { useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import { DocumentFormatIcon, IconUpload } from "@/components/icons/Icons";
 import { ExportPanel } from "@/components/import/ExportPanel";
+import { ImportPreview } from "@/components/import/ImportPreview";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { AppPageLayout } from "@/components/layout/AppPageLayout";
 import { Spinner } from "@/components/ui/Spinner";
 import { api } from "@/services/api";
-import type { IngestionResult } from "@/types";
+import type { IngestionPreview, IngestionResult } from "@/types";
 import {
   ACCEPTED_EXTENSIONS,
   FILE_INPUT_ACCEPT,
@@ -58,6 +59,7 @@ export function ImportPanel() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<IngestionResult | null>(null);
+  const [preview, setPreview] = useState<IngestionPreview | null>(null);
 
   function pickFile(selected: File | null) {
     if (!selected) return;
@@ -68,6 +70,7 @@ export function ImportPanel() {
     }
     setError(null);
     setResult(null);
+    setPreview(null);
     setFile(selected);
   }
 
@@ -84,6 +87,8 @@ export function ImportPanel() {
   function clearFile() {
     setFile(null);
     setError(null);
+    setResult(null);
+    setPreview(null);
     if (inputRef.current) inputRef.current.value = "";
   }
 
@@ -95,10 +100,8 @@ export function ImportPanel() {
     setResult(null);
 
     try {
-      const data = await api.ingestFile(file);
-      setResult(data);
-      setFile(null);
-      if (inputRef.current) inputRef.current.value = "";
+      const data = await api.previewFile(file);
+      setPreview(data);
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
@@ -189,16 +192,31 @@ export function ImportPanel() {
 
         <div className="import-actions">
           <Button onClick={handleUpload} disabled={!file || uploading} loading={uploading}>
-            Importer le fichier
+            Lire et reconstruire le tableau
           </Button>
           {file && !uploading && (
             <Button variant="ghost" onClick={clearFile}>
               Retirer le fichier
             </Button>
           )}
-          {uploading && <Spinner size="sm" label="Traitement en cours…" />}
+          {uploading && (
+            <Spinner size="sm" label="Lecture de tout le document en cours…" />
+          )}
         </div>
       </div>
+
+      {preview && (
+        <ImportPreview
+          preview={preview}
+          onCancel={clearFile}
+          onCommitted={(data) => {
+            setResult(data);
+            setPreview(null);
+            setFile(null);
+            if (inputRef.current) inputRef.current.value = "";
+          }}
+        />
+      )}
 
       <div className="card card--glass">
         <h2>Colonnes attendues</h2>
