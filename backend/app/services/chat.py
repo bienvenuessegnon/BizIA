@@ -9,6 +9,7 @@ from __future__ import annotations
 import unicodedata
 from typing import Any, Callable
 
+from app.services.gemini import answer_with_gemini
 from ml.utils.numbers import format_amount, to_float
 
 _NO_ANALYSIS = (
@@ -22,6 +23,10 @@ def answer_from_analysis(question: str, analysis: dict[str, Any] | None) -> dict
     """Retourne {"reply": str, "grounded": bool}."""
     if analysis is None:
         return {"reply": _NO_ANALYSIS, "grounded": False}
+
+    ai_reply = answer_with_gemini(question, analysis)
+    if ai_reply:
+        return {"reply": ai_reply, "grounded": True}
 
     intent = _detect_intent(_normalize(question))
     reply = _HANDLERS[intent](analysis)

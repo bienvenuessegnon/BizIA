@@ -12,6 +12,10 @@ services:
       DATA_DIR: /repo/data
       UPLOAD_DIR: /repo/data/uploads
       DATABASE_PATH: /repo/data/local/bizia.json
+      LLM_PROVIDER: ${LLM_PROVIDER:-none}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      GEMINI_ENRICH_ANALYSIS: ${GEMINI_ENRICH_ANALYSIS:-true}
     volumes:
       - ./data:/repo/data
     healthcheck:

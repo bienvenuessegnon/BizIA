@@ -9,7 +9,26 @@
 
 Python 3.12 et Node 22 sont les versions de référence de cet environnement.
 
-## Render (un seul service, sans clé)
+## Activer Gemini (optionnel)
+
+L'analyse métier (CA, bénéfice, marge, classements) reste calculée localement et
+déterministe. Gemini améliore les constats et recommandations, puis répond dans
+l'assistant uniquement à partir de cette analyse.
+
+Dans `.env` en local, ou dans les variables secrètes du service :
+
+```dotenv
+LLM_PROVIDER=gemini
+GEMINI_API_KEY=votre_cle_google_ai_studio
+GEMINI_MODEL=gemini-2.5-flash
+GEMINI_ENRICH_ANALYSIS=true
+```
+
+Ne jamais versionner la clé. Sans clé, si Gemini est indisponible ou si sa réponse
+est invalide, BizIA conserve automatiquement son analyse et son assistant locaux.
+Mettre `GEMINI_ENRICH_ANALYSIS=false` permet d'utiliser Gemini seulement pour le chat.
+
+## Render (un seul service)
 
 Le `Dockerfile` de la racine construit le site Next.js en statique puis le fait servir par
 l’API : **une seule URL** pour le site et pour `/api`. Pas de CORS, pas de seconde adresse.
@@ -17,7 +36,8 @@ Connexion par e-mail + mot de passe, pas de Google.
 
 1. Sur Render : **New** → **Blueprint** → ce dépôt, branche `dev`.
 2. Un service : `bizia` (langage **Docker**).
-3. Aucune clé à coller. Les comptes JSON sont **éphémères** (un redéploiement les efface).
+3. Renseigner `GEMINI_API_KEY` dans le champ secret créé par le Blueprint. Les comptes
+   JSON sont **éphémères** (un redéploiement les efface).
 
 Ce que sert ce service :
 

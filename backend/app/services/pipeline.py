@@ -10,6 +10,7 @@ from typing import Any
 
 from ml.pipeline import analyze
 
+from app.services.gemini import enrich_analysis_with_gemini
 from app.services.store import get_store, get_user_store
 
 
@@ -21,5 +22,6 @@ def run_analysis(
     """store.as_dataset() → ml.analyze() → store.save_analysis()."""
     store = get_user_store(user_id) if user_id else get_store()
     result = analyze(store.as_dataset(source), include_forecast=include_forecast)
+    result = enrich_analysis_with_gemini(result)
     store.save_analysis(result)
     return result

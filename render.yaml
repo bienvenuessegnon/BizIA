@@ -14,4 +14,10 @@ services:
       - key: DATABASE_PATH
         value: data/local/bizia.json
       - key: LLM_PROVIDER
-        value: none
+        value: gemini
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: GEMINI_ENRICH_ANALYSIS
+        value: "true"

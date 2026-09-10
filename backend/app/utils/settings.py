@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     upload_dir: str = "data/uploads"
     database_path: str = "data/local/bizia.json"
     llm_provider: str = "none"
+    gemini_api_key: str = Field(default="", repr=False)
+    gemini_model: str = "gemini-2.5-flash"
+    gemini_enrich_analysis: bool = True
     default_low_stock_threshold: float = 5
     web_dist: str = "frontend/out"
 
