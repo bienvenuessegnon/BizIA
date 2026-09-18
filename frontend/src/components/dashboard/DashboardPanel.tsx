@@ -10,8 +10,11 @@ import { Spinner } from "@/components/ui/Spinner";
 import { api } from "@/services/api";
 import type { AnalysisResult } from "@/types";
 import { getApiErrorMessage, isNetworkError } from "@/utils/apiError";
-import { IconTrending, QuickActionIconSvg, type QuickActionIcon } from "@/components/icons/Icons";
+import { IconTrending, IconChartBar, IconFilePdf, IconArrowLeft, QuickActionIconSvg, type QuickActionIcon } from "@/components/icons/Icons";
 import { formatCurrency, formatPercent } from "@/utils/format";
+import { CommercialReport } from "./CommercialReport";
+import { PdfReportModal } from "./PdfReportModal";
+import { useCompany } from "@/contexts/CompanyContext";
 
 const KPI_CONFIG = [
   { key: "revenue", label: "Chiffre d'affaires", accent: "blue", format: (v: number) => formatCurrency(v) },
@@ -56,11 +59,14 @@ function KpiCard({
 }
 
 export function DashboardPanel() {
+  const { currentCompany } = useCompany();
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [apiOffline, setApiOffline] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"commercial" | "financial">("financial");
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
 
   const loadSummary = useCallback(async () => {
     setLoading(true);
@@ -112,8 +118,17 @@ export function DashboardPanel() {
       eyebrow="Vue d'ensemble"
       title="Tableau de bord"
       description="Pilotez votre activité avec des indicateurs clés, tendances et alertes en temps réel."
+      hideDefaultBanner={activeTab === "commercial"}
       actions={
         <>
+          <button
+            type="button"
+            className="btn btn--outline btn--sm"
+            onClick={() => setIsPdfModalOpen(true)}
+          >
+            <IconFilePdf size={16} />
+            <span>Rapport PDF</span>
+          </button>
           <Button onClick={handleRunAnalysis} loading={analyzing} disabled={analyzing || apiOffline}>
             Lancer l&apos;analyse
           </Button>
@@ -129,7 +144,36 @@ export function DashboardPanel() {
         </Alert>
       )}
 
-      {loading ? (
+      {/* Barre d'onglets de navigation du Dashboard */}
+      <div className="dashboard-tab-bar">
+        <button
+          type="button"
+          className={`dashboard-tab-btn ${activeTab === "commercial" ? "dashboard-tab-btn--active" : ""}`}
+          onClick={() => setActiveTab("commercial")}
+        >
+          <span className="dashboard-tab-btn__icon">
+            <IconChartBar size={18} />
+          </span>
+          <span>Performance Commerciale</span>
+        </button>
+        <button
+          type="button"
+          className={`dashboard-tab-btn ${activeTab === "financial" ? "dashboard-tab-btn--active" : ""}`}
+          onClick={() => setActiveTab("financial")}
+        >
+          <span className="dashboard-tab-btn__icon">
+            <IconTrending size={18} />
+          </span>
+          <span>Marges, Stocks & Alertes IA</span>
+        </button>
+      </div>
+
+      {activeTab === "commercial" ? (
+        <CommercialReport
+          companyName={currentCompany.name}
+          onOpenPdf={() => setIsPdfModalOpen(true)}
+        />
+      ) : loading ? (
         <div className="dashboard-loading">
           <Spinner label="Chargement de vos indicateurs…" />
         </div>
@@ -345,6 +389,11 @@ export function DashboardPanel() {
           )}
         </>
       )}
+
+      <PdfReportModal
+        isOpen={isPdfModalOpen}
+        onClose={() => setIsPdfModalOpen(false)}
+      />
     </AppPageLayout>
   );
 }

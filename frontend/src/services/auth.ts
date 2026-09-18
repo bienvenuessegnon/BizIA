@@ -89,6 +89,7 @@ export async function signup(payload: SignupPayload): Promise<AuthSession> {
     lastName: payload.lastName.trim(),
     email,
     password: payload.password,
+    isNewUser: true,
   };
 
   writeUsers([...users, user]);
@@ -97,6 +98,7 @@ export async function signup(payload: SignupPayload): Promise<AuthSession> {
     firstName: user.firstName,
     lastName: user.lastName,
     email: user.email,
+    isNewUser: true,
   });
   persistSession(session);
   return session;
@@ -123,6 +125,7 @@ export async function login(payload: LoginPayload): Promise<AuthSession> {
     firstName: match.firstName,
     lastName: match.lastName,
     email: match.email,
+    isNewUser: match.isNewUser ?? (match.email !== "demo@bizia.africa"),
   });
   persistSession(session);
   return session;
@@ -132,3 +135,78 @@ export async function logout(): Promise<void> {
   await delay(200);
   clearSession();
 }
+
+export async function loginWithGoogleAccount(profile: {
+  email: string;
+  name?: string;
+}): Promise<AuthSession> {
+  await delay(500);
+  const email = profile.email.trim().toLowerCase();
+
+  // Déduire le nom depuis le compte Gmail si non spécifié
+  let resolvedName = profile.name?.trim();
+  if (!resolvedName) {
+    const userPart = email.split("@")[0].replace(/[._-]/g, " ");
+    resolvedName = userPart
+      .split(" ")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+  }
+
+  const parts = resolvedName.split(" ");
+  const firstName = parts[0] || "Utilisateur";
+  const lastName = parts.slice(1).join(" ") || "Google";
+
+  const users = readUsers();
+  const existingUser = users.find((u) => u.email.toLowerCase() === email);
+  const isNew = !existingUser && email !== "demo@bizia.africa";
+
+  const googleUser: User = {
+    id: existingUser?.id || `google_${Date.now()}`,
+    firstName: existingUser?.firstName || firstName,
+    lastName: existingUser?.lastName || lastName,
+    email,
+    isNewUser: existingUser ? (existingUser.isNewUser ?? false) : isNew,
+  };
+
+  if (!existingUser) {
+    writeUsers([
+      ...users,
+      {
+        ...googleUser,
+        password: "google_oauth_protected",
+      },
+    ]);
+  }
+
+  const session = toSession(googleUser);
+  persistSession(session);
+  return session;
+}
+
+export async function loginWithGoogle(): Promise<AuthSession> {
+  return loginWithGoogleAccount({
+    email: "amadou.kone@gmail.com",
+    name: "Amadou Koné",
+  });
+}
+
+export async function requestPasswordReset(email: string): Promise<boolean> {
+  await delay(500);
+  const users = readUsers();
+  const exists = users.some((u) => u.email.toLowerCase() === email.trim().toLowerCase());
+  return exists || true; // Toujours renvoyer true côté client pour des raisons de sécurité
+}
+
+export async function resetPassword(email: string, newPassword: string): Promise<boolean> {
+  await delay(500);
+  const users = readUsers();
+  const index = users.findIndex((u) => u.email.toLowerCase() === email.trim().toLowerCase());
+  if (index >= 0) {
+    users[index].password = newPassword;
+    writeUsers(users);
+    return true;
+  }
+  return false;
+}
+

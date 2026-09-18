@@ -1,9 +1,9 @@
-export function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("fr-FR", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 0,
+export function formatCurrency(value: number, options?: { showDecimals?: boolean }): string {
+  const formatted = new Intl.NumberFormat("fr-FR", {
+    minimumFractionDigits: options?.showDecimals ? 2 : 0,
+    maximumFractionDigits: 2,
   }).format(value);
+  return `${formatted} CFA`;
 }
 
 export function formatPercent(value: number): string {

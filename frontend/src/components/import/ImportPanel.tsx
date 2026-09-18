@@ -1,8 +1,9 @@
 "use client";
 
 import { useRef, useState, type ChangeEvent, type DragEvent } from "react";
-import { DocumentFormatIcon, IconUpload } from "@/components/icons/Icons";
+import { DocumentFormatIcon, IconUpload, IconSparkles } from "@/components/icons/Icons";
 import { ExportPanel } from "@/components/import/ExportPanel";
+import { StructuredDataTable } from "@/components/import/StructuredDataTable";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { AppPageLayout } from "@/components/layout/AppPageLayout";
@@ -24,6 +25,7 @@ export function ImportPanel() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<IngestionResult | null>(null);
+  const [showStructured, setShowStructured] = useState(true);
 
   function pickFile(selected: File | null) {
     if (!selected) return;
@@ -59,6 +61,7 @@ export function ImportPanel() {
     try {
       const data = await api.ingestFile(file);
       setResult(data);
+      setShowStructured(true);
       setFile(null);
       if (inputRef.current) inputRef.current.value = "";
     } catch (err) {
@@ -72,9 +75,23 @@ export function ImportPanel() {
 
   return (
     <AppPageLayout
-      eyebrow="Données"
-      title="Import & export de documents"
-      description="Importez tous vos fichiers métier — tableurs, PDF, Word, PowerPoint — et exportez vos analyses dans le format souhaité."
+      eyebrow="Données & Pipeline IA"
+      title="Import & structuration intelligente"
+      description="Importez tous vos fichiers métier — tableurs, PDF, Word, PowerPoint — et validez les données extraites par les modèles d'IA."
+      actions={
+        <Button
+          variant="secondary"
+          onClick={() => setShowStructured((prev) => !prev)}
+        >
+          {showStructured ? (
+            "Masquer les données IA"
+          ) : (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+              <IconSparkles size={16} /> Voir les données IA/ML
+            </span>
+          )}
+        </Button>
+      }
     >
       <div className="card card--glass import-zone">
         <div
@@ -124,9 +141,9 @@ export function ImportPanel() {
         {error && <Alert variant="error">{error}</Alert>}
 
         {result && (
-          <Alert variant="success" title="Document importé">
+          <Alert variant="success" title="Document importé et structuré">
             {result.filename} — {result.products_ingested} produit(s), {result.sales_ingested}{" "}
-            enregistrement(s) traité(s).
+            enregistrement(s) traités par l&apos;IA.
           </Alert>
         )}
 
@@ -134,9 +151,16 @@ export function ImportPanel() {
           <Button onClick={handleUpload} disabled={!file || uploading} loading={uploading}>
             Importer le document
           </Button>
-          {uploading && <Spinner size="sm" label="Traitement en cours…" />}
+          {uploading && <Spinner size="sm" label="Traitement par les modèles IA en cours…" />}
         </div>
       </div>
+
+      {/* Tableau de structuration IA/ML interactif */}
+      {showStructured && (
+        <StructuredDataTable
+          filename={result?.filename || file?.name || "releve_transactions_2025.xlsx"}
+        />
+      )}
 
       <div className="card card--glass">
         <h2>Formats acceptés à l&apos;import</h2>

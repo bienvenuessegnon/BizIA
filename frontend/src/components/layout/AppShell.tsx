@@ -5,18 +5,20 @@ import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { BizIALogo } from "@/components/brand/BizIALogo";
 import { ApiStatusBanner } from "@/components/layout/ApiStatusBanner";
+import { AuthGuard } from "@/components/layout/AuthGuard";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { useAuth } from "@/contexts/AuthContext";
 
 const NAV_LINKS = [
+  ["/", "Accueil"],
+  ["/dashboard", "Dashboard"],
   ["/produits", "Produits"],
   ["/ventes", "Ventes"],
   ["/import", "Import"],
-  ["/dashboard", "Dashboard"],
   ["/chat", "Assistant"],
 ] as const;
 
-const AUTH_ROUTES = ["/connexion", "/inscription"];
+const AUTH_ROUTES = ["/connexion", "/inscription", "/mot-de-passe-oublie"];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -35,11 +37,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="app-shell">
       <header className="header">
         <div className="header__inner header__inner--landing">
-          <Link href="/" className="header__brand" onClick={() => setMenuOpen(false)}>
-            <BizIALogo size="md" showTagline />
-          </Link>
+          <div className="header__left">
+            <Link href="/" className="header__brand" onClick={() => setMenuOpen(false)}>
+              <BizIALogo size="md" />
+            </Link>
+          </div>
 
-          {!isAuthPage && (
+          {!isAuthPage && isAuthenticated && (
             <nav className="header__links header__links--center" aria-label="Navigation principale">
               {NAV_LINKS.map(([href, label]) => (
                 <Link
@@ -76,19 +80,21 @@ export function AppShell({ children }: { children: ReactNode }) {
               )}
             </div>
 
-            <button
-              type="button"
-              className="header__menu-btn"
-              aria-expanded={menuOpen}
-              aria-label="Menu de navigation"
-              onClick={() => setMenuOpen((o) => !o)}
-            >
-              <span /><span /><span />
-            </button>
+            {isAuthenticated && (
+              <button
+                type="button"
+                className="header__menu-btn"
+                aria-expanded={menuOpen}
+                aria-label="Menu de navigation"
+                onClick={() => setMenuOpen((o) => !o)}
+              >
+                <span /><span /><span />
+              </button>
+            )}
           </div>
         </div>
 
-        {!isAuthPage && (
+        {!isAuthPage && isAuthenticated && (
           <nav
             className={`header__mobile-drawer ${menuOpen ? "header__mobile-drawer--open" : ""}`}
             aria-label="Menu mobile"
@@ -112,7 +118,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <main
         className={`main ${isAuthPage ? "main--auth" : ""} ${isHome ? "main--home main--landing" : "main--app"}`}
       >
-        {children}
+        <AuthGuard>{children}</AuthGuard>
       </main>
 
       <SiteFooter />
