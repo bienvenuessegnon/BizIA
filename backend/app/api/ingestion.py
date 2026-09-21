@@ -66,8 +66,9 @@ async def upload_file(
     try:
         products, sales = parse_tabular(str(saved), filename)
     except IngestionError as exc:
-        saved.unlink(missing_ok=True)
         raise ApiError(exc.status_code, exc.code, exc.message) from exc
+    finally:
+        saved.unlink(missing_ok=True)
 
     source = source_for_filename(filename) or "unknown"
     stats = get_company_store(company["id"]).extend_dataset(products, sales, source=source)
