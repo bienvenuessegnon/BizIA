@@ -133,3 +133,13 @@ export type ChatReply = {
   grounded: boolean;
   user_message: string;
 };
+
+export type Company = {
+  id: string;
+  name: string;
+  category?: string | null;
+  currency: string;
+  role: "owner" | "admin" | "member";
+  created_at?: string | null;
+};
+

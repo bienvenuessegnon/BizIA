@@ -6,6 +6,7 @@ import type {
   Alert,
   AnalysisResult,
   ChatReply,
+  Company,
   IngestionPreview,
   IngestionResult,
   Product,
@@ -63,6 +64,20 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   health: () => request<{ status: string }>("/health"),
+  companies: {
+    list: () => request<{ items: Company[] }>("/api/companies"),
+    create: (body: { name: string; category?: string; currency?: string }) =>
+      request<{ company: Company }>("/api/companies", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    get: (id: string) => request<{ company: Company }>(`/api/companies/${id}`),
+    update: (id: string, body: { name?: string; category?: string; currency?: string }) =>
+      request<{ company: Company }>(`/api/companies/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      }),
+  },
   products: {
     list: () => request<{ items: Product[] }>("/api/products"),
     create: (body: Product) =>

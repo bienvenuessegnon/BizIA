@@ -26,6 +26,11 @@ class Settings(BaseSettings):
     default_low_stock_threshold: float = 5
     web_dist: str = "frontend/out"
 
+    # Supabase V2 Configuration
+    supabase_url: str = Field(default="", validation_alias=AliasChoices("SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL"))
+    supabase_anon_key: str = Field(default="", repr=False, validation_alias=AliasChoices("SUPABASE_ANON_KEY", "NEXT_PUBLIC_SUPABASE_ANON_KEY"))
+    supabase_service_role_key: str = Field(default="", repr=False, validation_alias=AliasChoices("SUPABASE_SERVICE_ROLE_KEY"))
+
     @property
     def cors_origin_list(self) -> list[str]:
         raw = self.cors_origins.strip()

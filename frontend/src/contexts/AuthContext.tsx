@@ -18,6 +18,10 @@ type AuthContextValue = {
   isAuthenticated: boolean;
   signup: (payload: SignupPayload) => Promise<void>;
   login: (payload: LoginPayload) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
+  loginWithGoogleAccount: (profile: { email: string; name?: string }) => Promise<void>;
+  requestPasswordReset: (email: string) => Promise<boolean>;
+  resetPassword: (email: string, newPassword: string) => Promise<boolean>;
   logout: () => Promise<void>;
 };
 
@@ -44,6 +48,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(session.user);
   }, []);
 
+  const loginWithGoogle = useCallback(async () => {
+    const session = await authService.loginWithGoogle();
+    setUser(session.user);
+  }, []);
+
+  const loginWithGoogleAccount = useCallback(async (profile: { email: string; name?: string }) => {
+    const session = await authService.loginWithGoogleAccount(profile);
+    setUser(session.user);
+  }, []);
+
+  const requestPasswordReset = useCallback(async (email: string) => {
+    return await authService.requestPasswordReset(email);
+  }, []);
+
+  const resetPassword = useCallback(async (email: string, newPassword: string) => {
+    return await authService.resetPassword(email, newPassword);
+  }, []);
+
   const logout = useCallback(async () => {
     await authService.logout();
     setUser(null);
@@ -56,9 +78,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: !!user,
       signup,
       login,
+      loginWithGoogle,
+      loginWithGoogleAccount,
+      requestPasswordReset,
+      resetPassword,
       logout,
     }),
-    [user, isLoading, signup, login, logout],
+    [
+      user,
+      isLoading,
+      signup,
+      login,
+      loginWithGoogle,
+      loginWithGoogleAccount,
+      requestPasswordReset,
+      resetPassword,
+      logout,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

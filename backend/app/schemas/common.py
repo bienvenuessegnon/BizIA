@@ -60,3 +60,25 @@ class RegisterIn(BaseModel):
 class LoginIn(BaseModel):
     email: str = Field(min_length=3, max_length=254)
     password: str = Field(min_length=1, max_length=128)
+
+
+class CompanyIn(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    category: str | None = Field(default="Commerce Général", max_length=80)
+    currency: str = Field(default="FCFA", max_length=10)
+
+
+class CompanyUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    category: str | None = Field(default=None, max_length=80)
+    currency: str | None = Field(default=None, max_length=10)
+
+
+class CompanyOut(BaseModel):
+    id: str
+    name: str
+    category: str | None = None
+    currency: str = "FCFA"
+    role: str = "owner"
+    created_at: str | None = None
+

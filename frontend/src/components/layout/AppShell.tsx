@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { BizIALogo } from "@/components/brand/BizIALogo";
 import { ApiStatusBanner } from "@/components/layout/ApiStatusBanner";
+import { AuthGuard } from "@/components/layout/AuthGuard";
+import { CompanySelector } from "@/components/layout/CompanySelector";
 import { SiteFooter } from "@/components/layout/SiteFooter";
-import { Spinner } from "@/components/ui/Spinner";
 import { useAuth } from "@/contexts/AuthContext";
 
 const NAV_LINKS = [
@@ -18,7 +19,7 @@ const NAV_LINKS = [
   ["/chat", "Assistant"],
 ] as const;
 
-const AUTH_ROUTES = ["/connexion", "/inscription"];
+const AUTH_ROUTES = ["/connexion", "/inscription", "/mot-de-passe-oublie"];
 const PROTECTED_ROUTES = ["/produits", "/ventes", "/import", "/dashboard", "/chat"];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -29,19 +30,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const isAuthPage = pathname != null && AUTH_ROUTES.includes(pathname);
   const isHome = pathname === "/";
-  // Sans compte, l'accueil ne mène qu'à l'inscription : les onglets de
-  // l'application n'apparaissent qu'une fois la session ouverte.
   const showNav = !isAuthPage && !isLoading && isAuthenticated;
-  const isProtected = pathname != null && PROTECTED_ROUTES.includes(pathname);
-  // Le contenu protégé n'est jamais rendu avant que la session soit connue,
-  // sinon il apparaîtrait une fraction de seconde avant la redirection.
-  const holdProtectedPage = isProtected && (isLoading || !isAuthenticated);
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated && isProtected) {
-      router.replace("/connexion");
-    }
-  }, [isAuthenticated, isLoading, isProtected, router]);
 
   async function handleLogout() {
     await logout();
@@ -52,9 +41,12 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="app-shell">
       <header className="header">
         <div className="header__inner header__inner--landing">
-          <Link href="/" className="header__brand" onClick={() => setMenuOpen(false)}>
-            <BizIALogo size="md" showTagline />
-          </Link>
+          <div className="header__left" style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <Link href="/" className="header__brand" onClick={() => setMenuOpen(false)}>
+              <BizIALogo size="md" showTagline />
+            </Link>
+            {!isAuthPage && isAuthenticated && <CompanySelector />}
+          </div>
 
           {showNav && (
             <nav className="header__links header__links--center" aria-label="Navigation principale">
@@ -131,13 +123,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <main
         className={`main ${isAuthPage ? "main--auth" : ""} ${isHome ? "main--home main--landing" : "main--app"}`}
       >
-        {holdProtectedPage ? (
-          <div className="route-guard">
-            <Spinner label={isLoading ? "Chargement…" : "Redirection vers la connexion…"} />
-          </div>
-        ) : (
-          children
-        )}
+        <AuthGuard>{children}</AuthGuard>
       </main>
 
       <SiteFooter />

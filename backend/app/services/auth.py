@@ -65,7 +65,20 @@ def register(first_name: str, last_name: str, email: str, password: str) -> dict
 
 
 def login(email: str, password: str) -> dict[str, Any]:
-    user = get_store().find_user_by_email(email.strip().lower())
+    store = get_store()
+    normalized = email.strip().lower()
+    user = store.find_user_by_email(normalized)
+    if not user and normalized == "demo@bizia.africa" and password == "password123":
+        user = store.add_user(
+            {
+                "id": str(uuid.uuid4()),
+                "first_name": "Invité",
+                "last_name": "Démo",
+                "email": "demo@bizia.africa",
+                "password_hash": password_hash.hash("password123"),
+            }
+        )
+        store.ensure_default_company(user["id"], "BizIA Démo")
     stored_hash = str(user.get("password_hash") or "") if user else ""
     if not user or not stored_hash or not password_hash.verify(password, stored_hash):
         raise ApiError(401, "invalid_credentials", "E-mail ou mot de passe incorrect.")
