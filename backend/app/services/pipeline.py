@@ -11,16 +11,22 @@ from typing import Any
 from ml.pipeline import analyze
 
 from app.services.gemini import enrich_analysis_with_gemini
-from app.services.store import get_store, get_user_store
+from app.services.store import get_company_store, get_store, get_user_store
 
 
 def run_analysis(
     source: str | None = None,
     include_forecast: bool = False,
     user_id: str | None = None,
+    company_id: str | None = None,
 ) -> dict[str, Any]:
     """store.as_dataset() → ml.analyze() → store.save_analysis()."""
-    store = get_user_store(user_id) if user_id else get_store()
+    if company_id:
+        store = get_company_store(company_id)
+    elif user_id:
+        store = get_user_store(user_id)
+    else:
+        store = get_store()
     result = analyze(store.as_dataset(source), include_forecast=include_forecast)
     result = enrich_analysis_with_gemini(result)
     store.save_analysis(result)

@@ -17,3 +17,4 @@ pwdlib[argon2]>=0.3.1
 reportlab>=5.0.1
 python-docx>=1.2.0
 google-genai>=2.22.0
+supabase>=2.0.0

@@ -18,6 +18,7 @@ from app.utils.settings import settings
 
 _store: "JsonStore | None" = None
 _user_stores: dict[str, "JsonStore"] = {}
+_company_stores: dict[str, "JsonStore"] = {}
 
 _EMPTY: dict[str, Any] = {
     "products": [],
@@ -479,11 +480,20 @@ def get_store() -> JsonStore:
 
 def get_user_store(user_id: str) -> JsonStore:
     """Store métier isolé d'un compte authentifié."""
-    key = str(uuid.UUID(user_id))
+    key = str(uuid.UUID(str(user_id)))
     if key not in _user_stores:
         base = get_store().path
         _user_stores[key] = JsonStore(base.parent / "users" / f"{key}.json")
     return _user_stores[key]
+
+
+def get_company_store(company_id: str) -> JsonStore:
+    """Store métier isolé d'une entreprise (Multi-entreprises V2)."""
+    key = str(uuid.UUID(str(company_id)))
+    if key not in _company_stores:
+        base = get_store().path
+        _company_stores[key] = JsonStore(base.parent / "companies" / f"{key}.json")
+    return _company_stores[key]
 
 
 def set_store(store: JsonStore | None) -> None:
@@ -491,3 +501,4 @@ def set_store(store: JsonStore | None) -> None:
     global _store
     _store = store
     _user_stores.clear()
+    _company_stores.clear()

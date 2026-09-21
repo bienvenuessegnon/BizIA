@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
-from app.api.auth import current_user
+from app.api.auth import current_company
 from app.services.chat import answer_from_analysis
-from app.services.store import get_user_store
+from app.services.store import get_company_store
 
 router = APIRouter()
 
@@ -13,9 +13,9 @@ class ChatMessage(BaseModel):
 
 
 @router.post("/messages")
-def chat_message(payload: ChatMessage, user: dict = Depends(current_user)) -> dict:
+def chat_message(payload: ChatMessage, company: dict = Depends(current_company)) -> dict:
     answered = answer_from_analysis(
-        payload.message, get_user_store(user["id"]).get_last_analysis()
+        payload.message, get_company_store(company["id"]).get_last_analysis()
     )
     return {
         "reply": answered["reply"],

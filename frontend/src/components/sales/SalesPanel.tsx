@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Input } from "@/components/ui/Input";
 import { AppPageLayout } from "@/components/layout/AppPageLayout";
 import { Spinner } from "@/components/ui/Spinner";
+import { useCompany } from "@/contexts/CompanyContext";
 import { api } from "@/services/api";
 import type { Product, Sale } from "@/types";
 import { formatCurrency, formatDate } from "@/utils/format";
@@ -17,6 +18,7 @@ type SaleForm = {
   quantity: number;
   unit_price: number;
   sold_at: string;
+  channel: string;
 };
 
 const EMPTY: SaleForm = {
@@ -24,9 +26,19 @@ const EMPTY: SaleForm = {
   quantity: 1,
   unit_price: 0,
   sold_at: "",
+  channel: "Boutique",
 };
 
+const CHANNELS = [
+  { value: "Boutique", label: "Boutique / Point de vente" },
+  { value: "Web", label: "Site Web / E-commerce" },
+  { value: "WhatsApp", label: "WhatsApp Business" },
+  { value: "B2B", label: "B2B / Vente en gros" },
+  { value: "Autre", label: "Autre canal" },
+];
+
 export function SalesPanel() {
+  const { currentCompany } = useCompany();
   const [items, setItems] = useState<Sale[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [form, setForm] = useState<SaleForm>(EMPTY);
@@ -52,7 +64,7 @@ export function SalesPanel() {
 
   useEffect(() => {
     load();
-  }, [load]);
+  }, [load, currentCompany.id]);
 
   const totals = useMemo(
     () =>
@@ -94,12 +106,13 @@ export function SalesPanel() {
         unit_price: form.unit_price,
         unit_cost: null,
         sold_at: form.sold_at ? new Date(form.sold_at).toISOString() : null,
-        channel: "manual",
+        channel: form.channel || "Boutique",
       });
       setSuccess(
-        `Vente enregistrée : ${form.quantity} × ${formatCurrency(form.unit_price)} = ${formatCurrency(
-          form.quantity * form.unit_price
-        )}.`
+        `Vente enregistrée : ${form.quantity} × ${formatCurrency(form.unit_price, currentCompany.currency || "FCFA")} = ${formatCurrency(
+          form.quantity * form.unit_price,
+          currentCompany.currency || "FCFA"
+        )} (${form.channel}).`
       );
       setForm(EMPTY);
       await load();
@@ -112,9 +125,9 @@ export function SalesPanel() {
 
   return (
     <AppPageLayout
-      eyebrow="Transactions"
+      eyebrow={`Transactions • ${currentCompany.name}`}
       title="Ventes"
-      description="Enregistrez vos ventes une par une. Chaque vente est rattachée à un produit de votre catalogue."
+      description={`Enregistrez et suivez les ventes de ${currentCompany.name}. Données strictement rattachées à votre entreprise courante.`}
     >
       <div className="page-grid">
         <form className="card card--glass form-card" onSubmit={handleSubmit}>
@@ -125,7 +138,8 @@ export function SalesPanel() {
 
           {products.length === 0 && !loading ? (
             <Alert variant="info">
-              Aucun produit au catalogue. <Link href="/produits" className="alert__link">Ajoutez un produit</Link>{" "}
+              Aucun produit au catalogue de {currentCompany.name}.{" "}
+              <Link href="/produits" className="alert__link">Ajoutez un produit</Link>{" "}
               avant d&apos;enregistrer une vente.
             </Alert>
           ) : (
@@ -145,7 +159,7 @@ export function SalesPanel() {
                   <option value="">Choisir un produit…</option>
                   {products.map((product) => (
                     <option key={product.sku} value={product.sku}>
-                      {product.name} — {product.sku} ({formatCurrency(product.unit_price)})
+                      {product.name} — {product.sku} ({formatCurrency(product.unit_price, currentCompany.currency || "FCFA")})
                     </option>
                   ))}
                 </select>
@@ -169,39 +183,62 @@ export function SalesPanel() {
             <Input
               name="unit_price"
               type="number"
-              label="Prix unitaire (FCFA)"
+              label={`Prix unitaire (${currentCompany.currency || "FCFA"})`}
               min={0}
               value={form.unit_price || ""}
               onChange={(e) => setForm((f) => ({ ...f, unit_price: Number(e.target.value) }))}
             />
           </div>
 
-          <Input
-            name="sold_at"
-            type="datetime-local"
-            label="Date de vente (optionnel)"
-            value={form.sold_at}
-            onChange={(e) => setForm((f) => ({ ...f, sold_at: e.target.value }))}
-          />
+          <div className="form-card__row">
+            <div className="field" style={{ flex: 1 }}>
+              <label className="field__label" htmlFor="sale_channel">
+                Canal de distribution
+              </label>
+              <div className="field__control">
+                <select
+                  id="sale_channel"
+                  name="channel"
+                  className="field__input"
+                  value={form.channel}
+                  onChange={(e) => setForm((f) => ({ ...f, channel: e.target.value }))}
+                >
+                  {CHANNELS.map((ch) => (
+                    <option key={ch.value} value={ch.value}>
+                      {ch.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <Input
+              name="sold_at"
+              type="datetime-local"
+              label="Date de vente (optionnel)"
+              value={form.sold_at}
+              onChange={(e) => setForm((f) => ({ ...f, sold_at: e.target.value }))}
+            />
+          </div>
 
           <Button
             type="submit"
             loading={submitting}
             disabled={submitting || !form.product_sku}
           >
-            Enregistrer la vente
+            Enregistrer dans {currentCompany.name}
           </Button>
         </form>
 
         <div className="card card--glass">
-          <h2>Historique des ventes</h2>
+          <h2>Historique des ventes ({items.length})</h2>
           {loadError && <Alert variant="error">{loadError}</Alert>}
           {loading ? (
             <Spinner />
           ) : items.length === 0 ? (
             <EmptyState
-              title="Aucune vente"
-              description="Enregistrez une vente ou importez un fichier de ventes."
+              title={`Aucune vente pour ${currentCompany.name}`}
+              description="Enregistrez une première vente ou importez un document de ventes."
             />
           ) : (
             <div className="table-wrap">
@@ -213,7 +250,7 @@ export function SalesPanel() {
                     <th>Prix unit.</th>
                     <th>Total</th>
                     <th>Date</th>
-                    <th>Source</th>
+                    <th>Canal</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -221,10 +258,14 @@ export function SalesPanel() {
                     <tr key={s.id ?? `${s.product_sku}-${i}`}>
                       <td><code>{s.product_sku}</code></td>
                       <td>{s.quantity}</td>
-                      <td>{formatCurrency(s.unit_price)}</td>
-                      <td>{formatCurrency(s.quantity * s.unit_price)}</td>
+                      <td>{formatCurrency(s.unit_price, currentCompany.currency || "FCFA")}</td>
+                      <td><strong>{formatCurrency(s.quantity * s.unit_price, currentCompany.currency || "FCFA")}</strong></td>
                       <td className="td--nowrap">{formatDate(s.sold_at)}</td>
-                      <td className="muted">{s.channel === "manual" ? "Saisie" : "Import"}</td>
+                      <td>
+                        <span className="table-tag table-tag--info">
+                          {s.channel && s.channel !== "manual" ? s.channel : "Boutique"}
+                        </span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -234,7 +275,7 @@ export function SalesPanel() {
                     <td>{totals.quantity}</td>
                     <td />
                     <td>
-                      <strong>{formatCurrency(totals.revenue)}</strong>
+                      <strong>{formatCurrency(totals.revenue, currentCompany.currency || "FCFA")}</strong>
                     </td>
                     <td colSpan={2} />
                   </tr>

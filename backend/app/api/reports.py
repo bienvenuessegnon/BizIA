@@ -20,8 +20,8 @@ from reportlab.platypus import (
     TableStyle,
 )
 
-from app.api.auth import current_user
-from app.services.store import get_user_store
+from app.api.auth import current_company
+from app.services.store import get_company_store
 from app.utils.errors import ApiError
 
 router = APIRouter()
@@ -483,9 +483,9 @@ def _docx(report: dict) -> bytes:
 @router.post("/generate")
 def generate_report(
     format: str = Query(default="pdf", pattern="^(pdf|docx)$"),
-    user: dict = Depends(current_user),
+    company: dict = Depends(current_company),
 ):
-    analysis = get_user_store(user["id"]).get_last_analysis()
+    analysis = get_company_store(company["id"]).get_last_analysis()
     if analysis is None:
         raise ApiError(
             400,

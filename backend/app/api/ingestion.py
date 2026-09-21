@@ -5,10 +5,10 @@ from typing import Any, Literal
 from fastapi import APIRouter, Depends, File, UploadFile
 from pydantic import BaseModel, Field
 
-from app.api.auth import current_user
+from app.api.auth import current_company
 from app.services.gemini import extract_document_with_gemini, gemini_enabled
 from app.services.ingestion import IngestionError, parse_tabular, source_for_filename
-from app.services.store import get_user_store
+from app.services.store import get_company_store
 from app.utils.errors import ApiError
 from app.utils.settings import settings
 
@@ -51,7 +51,7 @@ _MIME_BY_SOURCE = {
 
 @router.post("/files")
 async def upload_file(
-    file: UploadFile = File(...), user: dict = Depends(current_user)
+    file: UploadFile = File(...), company: dict = Depends(current_company)
 ) -> dict:
     filename = Path(file.filename or "upload.bin").name
     payload = await file.read()
@@ -70,7 +70,7 @@ async def upload_file(
         raise ApiError(exc.status_code, exc.code, exc.message) from exc
 
     source = source_for_filename(filename) or "unknown"
-    stats = get_user_store(user["id"]).extend_dataset(products, sales, source=source)
+    stats = get_company_store(company["id"]).extend_dataset(products, sales, source=source)
     return {
         "status": "accepted",
         "filename": filename,
@@ -81,7 +81,7 @@ async def upload_file(
 
 @router.post("/preview")
 async def preview_file(
-    file: UploadFile = File(...), user: dict = Depends(current_user)
+    file: UploadFile = File(...), company: dict = Depends(current_company)
 ) -> dict[str, Any]:
     """Reconstruit le tableau sans écrire dans le store.
 
@@ -107,7 +107,7 @@ async def preview_file(
                 payload,
                 mime_type,
                 filename,
-                get_user_store(user["id"]).list_products(),
+                get_company_store(company["id"]).list_products(),
             )
 
         if extracted is not None:
@@ -149,7 +149,7 @@ async def preview_file(
 
 
 @router.post("/commit")
-def commit_preview(payload: ImportCommit, user: dict = Depends(current_user)) -> dict:
+def commit_preview(payload: ImportCommit, company: dict = Depends(current_company)) -> dict:
     """Enregistre uniquement les lignes relues et confirmées dans l'aperçu."""
     if not payload.products and not payload.sales:
         raise ApiError(422, "empty_import", "Ajoutez au moins une ligne avant de confirmer.")
@@ -165,7 +165,7 @@ def commit_preview(payload: ImportCommit, user: dict = Depends(current_user)) ->
     for sale in sales:
         if not sale.get("channel"):
             sale["channel"] = payload.source
-    stats = get_user_store(user["id"]).extend_dataset(
+    stats = get_company_store(company["id"]).extend_dataset(
         products, sales, source=payload.source
     )
     return {

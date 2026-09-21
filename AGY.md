@@ -333,3 +333,28 @@ $$\begin{aligned}
      * Intégration complète des 1902 lignes de classes CSS V2 dans `globals.css` et enrichissement de `Icons.tsx` sans supprimer `IconFileImage`.
      * Compilation Next.js (`npm run build`) validée sans aucune erreur (12 pages statiques générées).
 
+### Phase 2 : Isolation Hermétique des Données & Enrichissement Métier (Terminée)
+* **Date** : 21 septembre 2026
+* **Réalisations** :
+  1. **Isolation Stricte Multi-Entreprises (`X-Company-ID`)** :
+     * Dépendance FastAPI `current_company` dans `backend/app/api/auth.py` : intercepte l'en-tête HTTP `X-Company-ID`, valide les droits d'appartenance de l'utilisateur (renvoie 403 `company_access_denied` si non autorisé) et offre un repli automatique et fluide vers l'entreprise par défaut si l'en-tête est omis.
+     * Découpage du store local par entreprise (`get_company_store` dans `backend/app/services/store.py`).
+     * Cloisonnement complet de toutes les routes métier :
+       - `backend/app/api/products.py` : catalogue isolé par entreprise.
+       - `backend/app/api/sales.py` : ventes isolées par entreprise.
+       - `backend/app/api/analysis.py` & `backend/app/services/pipeline.py` : calculs d'analyses cloisonnés par entreprise en respectant la règle du pipeline unique.
+       - `backend/app/api/alerts.py` : alertes de stock isolées par entreprise.
+       - `backend/app/api/chat.py` : chatbot contextualisé sur l'analyse de l'entreprise courante.
+       - `backend/app/api/ingestion.py` : imports et validations interactives rattachés à l'entreprise courante.
+       - `backend/app/api/reports.py` : rapports PDF et Word générés à partir des données de l'entreprise courante.
+  2. **Client API Frontend (`frontend/src/services/api.ts`)** :
+     * Injection systématique de l'en-tête `X-Company-ID` dans toutes les requêtes `request<T>()` et `reports.download()` à partir de `localStorage.getItem("bizia_active_company_id")`.
+  3. **Panneaux Métier Enrichis** :
+     * `ProductsPanel.tsx` : rechargement automatique au changement d'entreprise, recherche textuelle (référence, nom), filtre par catégorie dynamique, filtre par niveau de stock (Tout / Faible / Normal), calcul et affichage direct de la marge unitaire et de son ratio.
+     * `SalesPanel.tsx` : rechargement automatique au changement d'entreprise, sélecteur de canal (`Boutique`, `Web`, `WhatsApp`, `B2B`, `Autre`), affichage du badge canal dans l'historique des ventes, multi-devises dynamique.
+     * `format.ts` : prise en charge du paramètre de devise pour tous les affichages monétaires.
+  4. **Validation Automatisée & Tests** :
+     * Création de `backend/tests/test_company_isolation.py` (3 tests validant l'isolation de catalogue, l'invisibilité des ventes d'une entreprise dans une autre, le 403 sur tentative d'accès non autorisé, et le repli automatique).
+     * Isolation hermétique des tests vis-à-vis du Supabase distant dans `backend/tests/conftest.py`.
+     * **98 tests automatisés exécutés avec 100 % de succès (`.venv/bin/pytest`)**.
+     * **Compilation Next.js (`npm run build`) validée avec 0 erreur (12 pages statiques)**.

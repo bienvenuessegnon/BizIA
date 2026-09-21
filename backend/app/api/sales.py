@@ -1,21 +1,21 @@
 from fastapi import APIRouter, Depends
 
-from app.api.auth import current_user
+from app.api.auth import current_company
 from app.schemas.common import SaleIn
-from app.services.store import get_user_store
+from app.services.store import get_company_store
 from app.utils.errors import ApiError
 
 router = APIRouter()
 
 
 @router.get("")
-def list_sales(user: dict = Depends(current_user)) -> dict:
-    return {"items": get_user_store(user["id"]).list_sales()}
+def list_sales(company: dict = Depends(current_company)) -> dict:
+    return {"items": get_company_store(company["id"]).list_sales()}
 
 
 @router.post("", status_code=201)
-def create_sale(payload: SaleIn, user: dict = Depends(current_user)) -> dict:
-    store = get_user_store(user["id"])
+def create_sale(payload: SaleIn, company: dict = Depends(current_company)) -> dict:
+    store = get_company_store(company["id"])
     sku = payload.product_sku.strip()
     if store.get_product(sku) is None:
         raise ApiError(

@@ -10,11 +10,11 @@ function withVisibleSpaces(value: string): string {
   return value.replace(/\s/g, "\u00a0");
 }
 
-export function formatCurrency(value: number): string {
+export function formatCurrency(value: number, currency: string = "FCFA"): string {
   const amount = new Intl.NumberFormat("fr-FR", {
     maximumFractionDigits: 0,
   }).format(value);
-  return `${withVisibleSpaces(amount)}\u00a0FCFA`;
+  return `${withVisibleSpaces(amount)}\u00a0${currency}`;
 }
 
 export function formatPercent(value: number): string {
