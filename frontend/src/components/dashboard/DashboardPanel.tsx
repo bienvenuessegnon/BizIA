@@ -1,26 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppPageLayout } from "@/components/layout/AppPageLayout";
 import { Alert } from "@/components/ui/Alert";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
+import { useCompany } from "@/contexts/CompanyContext";
 import { api } from "@/services/api";
 import type { AnalysisResult } from "@/types";
 import { getApiErrorMessage, isNetworkError } from "@/utils/apiError";
 import { IconTrending, QuickActionIconSvg, type QuickActionIcon } from "@/components/icons/Icons";
 import { formatCurrency, formatPercent } from "@/utils/format";
-
-const KPI_CONFIG = [
-  { key: "revenue", label: "Chiffre d'affaires", accent: "blue", format: (v: number) => formatCurrency(v) },
-  { key: "cost", label: "Coûts", accent: "slate", format: (v: number) => formatCurrency(v) },
-  { key: "profit", label: "Bénéfice", accent: "teal", format: (v: number) => formatCurrency(v) },
-  { key: "margin_pct", label: "Marge", accent: "violet", format: (v: number) => formatPercent(v) },
-  { key: "units_sold", label: "Unités vendues", accent: "amber", format: (v: number) => String(v) },
-  { key: "sales_count", label: "Nombre de ventes", accent: "rose", format: (v: number) => String(v) },
-] as const;
 
 const QUICK_ACTIONS: Array<{
   href: string;
@@ -56,12 +48,55 @@ function KpiCard({
 }
 
 export function DashboardPanel() {
+  const { currentCompany } = useCompany();
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
   const [apiOffline, setApiOffline] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  const kpiConfig = useMemo(
+    () => [
+      {
+        key: "revenue" as const,
+        label: "Chiffre d'affaires",
+        accent: "blue",
+        format: (v: number) => formatCurrency(v, currentCompany.currency || "FCFA"),
+      },
+      {
+        key: "cost" as const,
+        label: "Coûts",
+        accent: "slate",
+        format: (v: number) => formatCurrency(v, currentCompany.currency || "FCFA"),
+      },
+      {
+        key: "profit" as const,
+        label: "Bénéfice",
+        accent: "teal",
+        format: (v: number) => formatCurrency(v, currentCompany.currency || "FCFA"),
+      },
+      {
+        key: "margin_pct" as const,
+        label: "Marge",
+        accent: "violet",
+        format: (v: number) => formatPercent(v),
+      },
+      {
+        key: "units_sold" as const,
+        label: "Unités vendues",
+        accent: "amber",
+        format: (v: number) => String(v),
+      },
+      {
+        key: "sales_count" as const,
+        label: "Nombre de ventes",
+        accent: "rose",
+        format: (v: number) => String(v),
+      },
+    ],
+    [currentCompany.currency]
+  );
 
   const loadSummary = useCallback(async () => {
     setLoading(true);
@@ -84,12 +119,12 @@ export function DashboardPanel() {
 
   useEffect(() => {
     loadSummary();
-  }, [loadSummary]);
+  }, [loadSummary, currentCompany.id]);
 
   async function handleRunAnalysis() {
     if (
       !window.confirm(
-        "Lancer l'analyse sur les produits et ventes actuellement enregistrés ?",
+        `Lancer l'analyse sur les produits et ventes de ${currentCompany.name} ?`,
       )
     ) {
       return;
@@ -129,9 +164,9 @@ export function DashboardPanel() {
   return (
     <AppPageLayout
       className="dashboard"
-      eyebrow="Vue d'ensemble"
-      title="Tableau de bord"
-      description="Pilotez votre activité avec des indicateurs clés, tendances et alertes en temps réel."
+      eyebrow={`Tableau de bord • ${currentCompany.name}`}
+      title="Vue d'ensemble"
+      description={`Indicateurs clés, alertes et analyses de performance pour ${currentCompany.name} (${currentCompany.category || "Commerce Général"}).`}
       actions={
         <>
           <Button onClick={handleRunAnalysis} loading={analyzing} disabled={analyzing || apiOffline}>
@@ -164,7 +199,7 @@ export function DashboardPanel() {
       ) : (
         <>
           <div className="kpi-grid">
-            {KPI_CONFIG.map(({ key, label, accent, format }) => {
+            {kpiConfig.map(({ key, label, accent, format }) => {
               const raw = kpis ? Number(kpis[key]) : undefined;
               const value = hasData && raw !== undefined ? format(raw) : "—";
               const sub =
@@ -191,15 +226,15 @@ export function DashboardPanel() {
                 <div className="dashboard-empty__icon" aria-hidden="true">
                   <IconTrending size={48} />
                 </div>
-                <h2>{apiOffline ? "Connexion en cours" : "Prêt à analyser vos données"}</h2>
+                <h2>{apiOffline ? "Connexion en cours" : `Prêt à analyser ${currentCompany.name}`}</h2>
                 <p className="muted">
                   {apiOffline
                     ? "Nous n'arrivons pas à joindre BizIA pour le moment. Patientez un instant, puis actualisez cette page."
-                    : "Ajoutez des produits et des ventes, puis lancez l'analyse pour remplir ce tableau de bord."}
+                    : `Ajoutez des produits et des ventes pour ${currentCompany.name}, puis lancez l'analyse pour remplir ce tableau de bord.`}
                 </p>
                 {!apiOffline && (
                   <Button onClick={handleRunAnalysis} loading={analyzing}>
-                    Lancer la première analyse
+                    Lancer la première analyse pour {currentCompany.name}
                   </Button>
                 )}
               </div>

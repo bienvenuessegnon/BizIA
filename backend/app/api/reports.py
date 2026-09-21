@@ -35,8 +35,12 @@ _RED = colors.HexColor("#B91C1C")
 _AMBER = colors.HexColor("#D97706")
 
 
-def _report_payload(analysis: dict) -> dict:
+def _report_payload(analysis: dict, company: dict | None = None) -> dict:
+    comp = company or {}
     return {
+        "company_name": comp.get("name") or "BizIA",
+        "company_category": comp.get("category") or "Commerce Général",
+        "currency": comp.get("currency") or "FCFA",
         "kpis": analysis.get("kpis"),
         "insights": analysis.get("insights"),
         "alerts": analysis.get("alerts"),
@@ -50,12 +54,12 @@ def _report_payload(analysis: dict) -> dict:
     }
 
 
-def _money(value: object) -> str:
+def _money(value: object, currency: str = "FCFA") -> str:
     try:
         amount = float(value or 0)
     except (TypeError, ValueError):
         amount = 0
-    return f"{amount:,.0f}".replace(",", "\u00a0") + "\u00a0FCFA"
+    return f"{amount:,.0f}".replace(",", "\u00a0") + f"\u00a0{currency}"
 
 
 def _number(value: object) -> str:
@@ -72,10 +76,13 @@ def _text(value: object) -> str:
 
 def _lines(report: dict) -> list[str]:
     kpis = report.get("kpis") or {}
+    currency = report.get("currency") or "FCFA"
+    company_name = report.get("company_name") or "BizIA"
     lines = [
-        f"Chiffre d'affaires : {kpis.get('revenue', 0):,.0f} FCFA",
-        f"Coûts : {kpis.get('cost', 0):,.0f} FCFA",
-        f"Bénéfice : {kpis.get('profit', 0):,.0f} FCFA",
+        f"Entreprise : {company_name}",
+        f"Chiffre d'affaires : {kpis.get('revenue', 0):,.0f} {currency}",
+        f"Coûts : {kpis.get('cost', 0):,.0f} {currency}",
+        f"Bénéfice : {kpis.get('profit', 0):,.0f} {currency}",
         f"Marge : {kpis.get('margin_pct', 0):.1f} %",
         "",
         "Insights",
@@ -176,10 +183,11 @@ def _footer(canvas, document) -> None:
 
 def _kpi_table(report: dict, styles: dict[str, ParagraphStyle]) -> Table:
     kpis = report.get("kpis") or {}
+    currency = report.get("currency") or "FCFA"
     values = [
-        ("Chiffre d'affaires", _money(kpis.get("revenue"))),
-        ("Coûts", _money(kpis.get("cost"))),
-        ("Bénéfice", _money(kpis.get("profit"))),
+        ("Chiffre d'affaires", _money(kpis.get("revenue"), currency)),
+        ("Coûts", _money(kpis.get("cost"), currency)),
+        ("Bénéfice", _money(kpis.get("profit"), currency)),
         ("Marge", f"{float(kpis.get('margin_pct') or 0):.1f}\u00a0%"),
         ("Unités vendues", _number(kpis.get("units_sold"))),
         ("Nombre de ventes", _number(kpis.get("sales_count"))),
@@ -213,18 +221,19 @@ def _kpi_table(report: dict, styles: dict[str, ParagraphStyle]) -> Table:
 
 def _executive_summary(report: dict) -> str:
     kpis = report.get("kpis") or {}
+    currency = report.get("currency") or "FCFA"
     profit = float(kpis.get("profit") or 0)
     margin = float(kpis.get("margin_pct") or 0)
     direction = "positif" if profit >= 0 else "déficitaire"
     top = (report.get("top_profit") or [{}])[0]
     top_text = (
         f" Le produit le plus rentable est <b>{_text(top.get('name'))}</b>, "
-        f"avec {_money(top.get('profit'))} de bénéfice."
+        f"avec {_money(top.get('profit'), currency)} de bénéfice."
         if top
         else ""
     )
     return (
-        f"L'activité présente un résultat <b>{direction}</b> de <b>{_money(profit)}</b>, "
+        f"L'activité présente un résultat <b>{direction}</b> de <b>{_money(profit, currency)}</b>, "
         f"soit une marge de <b>{margin:.1f}\u00a0%</b>.{top_text}"
     )
 
@@ -261,7 +270,7 @@ def _trend_chart(points: list[dict]) -> Drawing:
     return drawing
 
 
-def _ranking_chart(items: list[dict]) -> Drawing:
+def _ranking_chart(items: list[dict], currency: str = "FCFA") -> Drawing:
     items = items[:5]
     width, height = 480, max(90, 27 * len(items) + 20)
     drawing = Drawing(width, height)
@@ -274,7 +283,7 @@ def _ranking_chart(items: list[dict]) -> Drawing:
         drawing.add(String(0, y + 3, name, fontSize=7.5, fillColor=_NAVY))
         bar_width = 250 * float(item.get("revenue") or 0) / maximum
         drawing.add(Rect(135, y, max(bar_width, 1), 11, fillColor=_GREEN, strokeColor=None))
-        drawing.add(String(395, y + 2, _money(item.get("revenue")), fontSize=7, fillColor=_SLATE))
+        drawing.add(String(395, y + 2, _money(item.get("revenue"), currency), fontSize=7, fillColor=_SLATE))
     return drawing
 
 
@@ -323,9 +332,16 @@ def _pdf(report: dict) -> bytes:
     )
     styles = _styles()
     generated = datetime.now(UTC).strftime("%d/%m/%Y à %H:%M UTC")
+    company_name = report.get("company_name") or "BizIA"
+    company_category = report.get("company_category") or "Commerce Général"
+    currency = report.get("currency") or "FCFA"
+
     story = [
-        Paragraph("Rapport d'analyse business", styles["title"]),
-        Paragraph(f"BizIA · Généré le {generated} · Données de la dernière analyse validée", styles["subtitle"]),
+        Paragraph(f"Rapport d'activité · {_text(company_name)}", styles["title"]),
+        Paragraph(
+            f"Entreprise : {_text(company_name)} · Secteur : {_text(company_category)} · Devise : {currency} · Généré le {generated}",
+            styles["subtitle"],
+        ),
         Paragraph("Bilan exécutif", styles["h1"]),
         Paragraph(_executive_summary(report), styles["body"]),
         Spacer(1, 2 * mm),
@@ -347,7 +363,7 @@ def _pdf(report: dict) -> bytes:
         story.extend(
             [
                 Paragraph("Produits moteurs du chiffre d'affaires", styles["h1"]),
-                _ranking_chart(top_sold),
+                _ranking_chart(top_sold, currency),
             ]
         )
 
@@ -362,8 +378,8 @@ def _pdf(report: dict) -> bytes:
                         [
                             item.get("name") or item.get("sku"),
                             _number(item.get("units_sold")),
-                            _money(item.get("revenue")),
-                            _money(item.get("profit")),
+                            _money(item.get("revenue"), currency),
+                            _money(item.get("profit"), currency),
                         ]
                         for item in top_profit[:10]
                     ],
@@ -470,7 +486,8 @@ def _pdf(report: dict) -> bytes:
 def _docx(report: dict) -> bytes:
     output = BytesIO()
     document = Document()
-    document.add_heading("Rapport d'analyse BizIA", level=0)
+    company_name = report.get("company_name") or "BizIA"
+    document.add_heading(f"Rapport d'activité · {company_name}", level=0)
     for line in _lines(report):
         if line in {"Insights", "Recommandations"}:
             document.add_heading(line, level=1)
@@ -492,17 +509,18 @@ def generate_report(
             "no_analysis",
             "Lancez une analyse avant d'exporter un rapport.",
         )
-    report = _report_payload(analysis)
+    report = _report_payload(analysis, company)
+    safe_name = "".join(c if c.isalnum() else "_" for c in str(company.get("name") or "bizia")).strip("_").lower() or "bizia"
     if format == "pdf":
         return Response(
             _pdf(report),
             media_type="application/pdf",
-            headers={"Content-Disposition": 'attachment; filename="bizia-rapport.pdf"'},
+            headers={"Content-Disposition": f'attachment; filename="bizia-rapport-{safe_name}.pdf"'},
         )
     if format == "docx":
         return Response(
             _docx(report),
             media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            headers={"Content-Disposition": 'attachment; filename="bizia-rapport.docx"'},
+            headers={"Content-Disposition": f'attachment; filename="bizia-rapport-{safe_name}.docx"'},
         )
     raise ApiError(422, "unsupported_report_format", "Choisissez PDF ou Word.")

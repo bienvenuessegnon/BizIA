@@ -358,3 +358,23 @@ $$\begin{aligned}
      * Isolation hermétique des tests vis-à-vis du Supabase distant dans `backend/tests/conftest.py`.
      * **98 tests automatisés exécutés avec 100 % de succès (`.venv/bin/pytest`)**.
      * **Compilation Next.js (`npm run build`) validée avec 0 erreur (12 pages statiques)**.
+
+### Phase 3 : Finalisation Multi-Entreprises (Dashboard, Chat & Rapports PDF/Word) (Terminée)
+* **Date** : 21 septembre 2026
+* **Réalisations** :
+  1. **Rapports PDF & Word Contextualisés (`backend/app/api/reports.py`)** :
+     * Injection dynamique des métadonnées de l'entreprise (`company_name`, `company_category`, `currency`) dans le modèle de génération `_report_payload`.
+     * Rendu ReportLab (PDF) et python-docx (Word) arborant le nom de l'entreprise, sa catégorie et la devise officielle configurée.
+     * Nommage automatique et nettoyé du fichier téléchargé (`bizia-rapport-<nom_entreprise>.(pdf|docx)` via l'en-tête `Content-Disposition`).
+  2. **Tableau de Bord Contextualisé (`frontend/src/components/dashboard/DashboardPanel.tsx`)** :
+     * Branchement sur `useCompany()`.
+     * Rechargement automatique des métriques et alertes lors du changement d'entreprise active.
+     * Formatage multi-devises automatique des KPIs (chiffre d'affaires, coûts, bénéfices) selon la devise de l'entreprise sélectionnée.
+     * Textes et boutons d'appel à l'action personnalisés avec le nom de l'entreprise courante.
+  3. **Assistant IA / Chatbot Contextualisé (`frontend/src/components/chat/ChatPanel.tsx`)** :
+     * Branchement sur `useCompany()`.
+     * Réinitialisation de l'historique de conversation lors d'un basculement d'entreprise pour éliminer tout risque de confusion de contexte.
+     * En-tête et suggestions contextualisés sur l'entreprise active.
+  4. **Validation Globale** :
+     * `pytest` : 98/98 tests validés avec succès (100 %).
+     * Next.js build : 12/12 pages statiques compilées avec succès, 0 erreur TypeScript/ESLint.

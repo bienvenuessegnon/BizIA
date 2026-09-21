@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { AppPageLayout } from "@/components/layout/AppPageLayout";
+import { useCompany } from "@/contexts/CompanyContext";
 import { api } from "@/services/api";
 
 type Message = {
@@ -20,11 +21,18 @@ const SUGGESTIONS = [
 ];
 
 export function ChatPanel() {
+  const { currentCompany } = useCompany();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+
+  // Réinitialiser la conversation si l'utilisateur change d'entreprise
+  useEffect(() => {
+    setMessages([]);
+    setError(null);
+  }, [currentCompany.id]);
 
   async function sendMessage(text: string) {
     const trimmed = text.trim();
@@ -68,9 +76,9 @@ export function ChatPanel() {
   return (
     <AppPageLayout
       className="chat-section"
-      eyebrow="Intelligence"
-      title="Assistant IA"
-      description="Posez vos questions sur votre activité. Les réponses sont ancrées sur la dernière analyse calculée."
+      eyebrow={`Assistant IA • ${currentCompany.name}`}
+      title="Assistant d'analyse"
+      description={`Posez vos questions sur la performance, les marges et les stocks de ${currentCompany.name}. Réponses strictement ancrées sur vos données.`}
     >
       {error && <Alert variant="error">{error}</Alert>}
 
@@ -78,7 +86,7 @@ export function ChatPanel() {
         <div className="chat-messages" ref={listRef}>
           {messages.length === 0 ? (
             <div className="chat-empty">
-              <p className="muted">Commencez par une question ou choisissez une suggestion :</p>
+              <p className="muted">Commencez par une question sur {currentCompany.name} ou choisissez une suggestion :</p>
               <div className="chat-suggestions">
                 {SUGGESTIONS.map((s) => (
                   <button
