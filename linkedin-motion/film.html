@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>LinkedIn — 45s motion study</title>
+<style>
+  @font-face { font-family: Inter; src: url("fonts/Inter-Regular.ttf") format("truetype"); font-weight: 400; font-style: normal; }
+  @font-face { font-family: Inter; src: url("fonts/Inter-Medium.ttf") format("truetype"); font-weight: 500; font-style: normal; }
+  @font-face { font-family: Inter; src: url("fonts/Inter-SemiBold.ttf") format("truetype"); font-weight: 600; font-style: normal; }
+  @font-face { font-family: Inter; src: url("fonts/Inter-Bold.ttf") format("truetype"); font-weight: 700; font-style: normal; }
+  html, body { margin: 0; padding: 0; background: #07111c; overflow: hidden; }
+  canvas { display: block; width: 1080px; height: 1350px; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1350"></canvas>
+<script>
+const W = 1080, H = 1350, FPS = 25, FRAMES = 45 * FPS;
+const BLUE = "#0A66C2";
+const BLUE_DEEP = "#084E96";
+const ICE = "#D7E8FA";
+const PAPER = "#F4F2EE";
+const INK = "#1B1F23";
+const MUTED = "#5E6B76";
+const MUTED_DARK = "#9AABBA";
+
+const SCENE = {
+  open:   { in: [8, 28],     out: [108, 130] },
+  name:   { in: [140, 162],  out: [226, 248] },
+  origin: { in: [258, 280],  out: [364, 386] },
+  scale:  { in: [396, 418],  out: [530, 552] },
+  minute: { in: [562, 584],  out: [706, 728] },
+  map:    { in: [738, 760],  out: [842, 864] },
+  vision: { in: [874, 896],  out: [978, 1000] },
+  end:    { in: [1010, 1034], out: null },
+};
+
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const seg = (f, a, b) => clamp((f - a) / (b - a), 0, 1);
+const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
+const easeInCubic = t => t * t * t;
+const easeInOutCubic = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const easeOutBack = t => {
+  const c1 = 1.35, c3 = c1 + 1;
+  return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+};
+
+function presence(frame, scene) {
+  const enter = easeOutCubic(seg(frame, scene.in[0], scene.in[1]));
+  if (!scene.out) return enter;
+  const leave = 1 - easeInCubic(seg(frame, scene.out[0], scene.out[1]));
+  return Math.min(enter, leave);
+}
+
+function sample(keys, frame) {
+  if (frame <= keys[0][0]) return keys[0][1];
+  for (let i = 1; i < keys.length; i++) {
+    if (frame <= keys[i][0]) {
+      const t = easeInOutCubic((frame - keys[i - 1][0]) / (keys[i][0] - keys[i - 1][0]));
+      return lerp(keys[i - 1][1], keys[i][1], t);
+    }
+  }
+  return keys[keys.length - 1][1];
+}
+
+function paperAmt(frame) {
+  const inn = easeInOutCubic(seg(frame, 248, 278));
+  const out = easeInOutCubic(seg(frame, 378, 412));
+  return inn * (1 - out);
+}
+function blueAmt(frame) {
+  const inn = easeInOutCubic(seg(frame, 858, 892));
+  const out = easeInOutCubic(seg(frame, 996, 1032));
+  return inn * (1 - out);
+}
+
+function buildGraph() {
+  const nodes = [{ x: 0, y: 0, r: 15, ring: 0 }];
+  const innerN = 6;
+  for (let i = 0; i < innerN; i++) {
+    const a = -Math.PI / 2 + (i / innerN) * Math.PI * 2;
+    nodes.push({ x: Math.cos(a) * 168, y: Math.sin(a) * 168, r: 7.5, ring: 1 });
+  }
+  const outerN = 12;
+  for (let i = 0; i < outerN; i++) {
+    const a = -Math.PI / 2 + 0.22 + (i / outerN) * Math.PI * 2;
+    const rad = 318 + (i % 3) * 18;
+    nodes.push({ x: Math.cos(a) * rad, y: Math.sin(a) * rad, r: 5, ring: 2 });
+  }
+  const edges = [];
+  for (let i = 1; i <= innerN; i++) edges.push([0, i]);
+  for (let i = 0; i < outerN; i++) {
+    const ni = 1 + innerN + i;
+    let best = 1, bestD = 1e12;
+    for (let j = 1; j <= innerN; j++) {
+      const dx = nodes[ni].x - nodes[j].x;
+      const dy = nodes[ni].y - nodes[j].y;
+      const d = dx * dx + dy * dy;
+      if (d < bestD) { bestD = d; best = j; }
+    }
+    edges.push([best, ni]);
+    if (i % 3 === 0) edges.push([0, ni]);
+    if (i % 4 === 1) edges.push([1 + innerN + ((i + 5) % outerN), ni]);
+  }
+  return { nodes, edges };
+}
+const GRAPH = buildGraph();
+
+function drawText(ctx, text, x, y, opt = {}) {
+  const {
+    size = 32, weight = 500, color = "#fff", align = "left",
+    tracking = 0, alpha = 1,
+  } = opt;
+  if (alpha <= 0.001 || !text) return 0;
+  ctx.save();
+  ctx.globalAlpha *= alpha;
+  ctx.fillStyle = color;
+  ctx.font = `${weight} ${size}px Inter, sans-serif`;
+  ctx.textBaseline = "middle";
+  if (!tracking) {
+    ctx.textAlign = align === "center" ? "center" : align === "right" ? "right" : "left";
+    ctx.fillText(text, x, y);
+    const w = ctx.measureText(text).width;
+    ctx.restore();
+    return w;
+  }
+  const chars = [...text];
+  const widths = chars.map((ch) => ctx.measureText(ch).width);
+  const total = widths.reduce((s, w) => s + w, 0) + tracking * Math.max(0, chars.length - 1);
+  let cx = align === "center" ? x - total / 2 : align === "right" ? x - total : x;
+  ctx.textAlign = "left";
+  for (let i = 0; i < chars.length; i++) {
+    ctx.fillText(chars[i], cx, y);
+    cx += widths[i] + tracking;
+  }
+  ctx.restore();
+  return total;
+}
+
+function withEnter(ctx, frame, scene, fn) {
+  const a = presence(frame, scene);
+  if (a <= 0.004) return;
+  const t = easeOutCubic(seg(frame, scene.in[0], scene.in[1]));
+  ctx.save();
+  ctx.globalAlpha *= a;
+  ctx.translate(0, (1 - t) * 28);
+  fn();
+  ctx.restore();
+}
+
+function eyebrow(ctx, text, x, y, color, alpha = 1) {
+  return drawText(ctx, text, x, y, {
+    size: 18, weight: 600, color, align: "left", tracking: 5.2, alpha,
+  });
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  const rr = Math.min(r, h / 2, w / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.arcTo(x + w, y, x + w, y + h, rr);
+  ctx.arcTo(x + w, y + h, x, y + h, rr);
+  ctx.arcTo(x, y + h, x, y, rr);
+  ctx.arcTo(x, y, x + w, y, rr);
+  ctx.closePath();
+}
+
+function drawBackground(ctx, frame) {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, "#0C1C2E");
+  g.addColorStop(0.55, "#081420");
+  g.addColorStop(1, "#050D16");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  const paper = paperAmt(frame);
+  if (paper > 0.004) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, W * paper, H);
+    ctx.clip();
+    const pg = ctx.createLinearGradient(0, 0, 0, H);
+    pg.addColorStop(0, "#F7F5F2");
+    pg.addColorStop(1, "#EFEBE6");
+    ctx.fillStyle = pg;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+    if (paper < 0.995) {
+      ctx.fillStyle = BLUE;
+      ctx.fillRect(W * paper - 5, 0, 5, H);
+    }
+  }
+
+  const blue = blueAmt(frame);
+  if (blue > 0.004) {
+    const r = lerp(0, 1500, easeInOutCubic(Math.min(1, blue / 0.92)));
+    const bg = ctx.createRadialGradient(W * 0.72, H * 0.28, 40, W * 0.5, H * 0.48, r);
+    bg.addColorStop(0, "#2B7FD6");
+    bg.addColorStop(0.55, BLUE);
+    bg.addColorStop(1, BLUE_DEEP);
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, blue * 1.15);
+    ctx.fillStyle = bg;
+    ctx.beginPath();
+    ctx.arc(540, 660, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+function graphPose(frame) {
+  const y = sample([
+    [0, 500], [120, 488], [150, 400], [236, 392],
+    [270, 520], [1000, 540], [1060, 600], [1124, 620],
+  ], frame);
+  const s = sample([
+    [0, 0.86], [36, 1], [140, 0.74], [236, 0.74],
+    [280, 0.95], [400, 1], [1020, 1], [1124, 1.06],
+  ], frame);
+  const alpha = sample([
+    [0, 0.92], [24, 1], [140, 1],
+    [160, 0.84], [236, 0.62], [272, 0], [390, 0],
+    [430, 0.18], [548, 0.14], [568, 0.06], [860, 0.04],
+    [905, 0.07], [990, 0.04], [1052, 0.8], [1124, 0.84],
+  ], frame);
+  return { x: 540, y, s, alpha };
+}
+
+function drawGraph(ctx, frame) {
+  const pose = graphPose(frame);
+  if (pose.alpha < 0.02) return;
+  const paper = paperAmt(frame);
+  const blue = blueAmt(frame);
+  const onPaper = paper > 0.55 && blue < 0.4;
+  const onBlue = blue > 0.55;
+  const line = onPaper ? "rgba(10,102,194," : onBlue ? "rgba(255,255,255," : "rgba(198,222,246,";
+  const node = onPaper ? "#0A66C2" : "#FFFFFF";
+  const glowA = onPaper ? 0 : pose.alpha * (onBlue ? 0.35 : 1);
+
+  if (glowA > 0.02) {
+    const grd = ctx.createRadialGradient(pose.x, pose.y, 10, pose.x, pose.y, 480 * pose.s);
+    grd.addColorStop(0, `rgba(10,102,194,${0.40 * glowA})`);
+    grd.addColorStop(0.5, `rgba(10,102,194,${0.10 * glowA})`);
+    grd.addColorStop(1, "rgba(10,102,194,0)");
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  const breathe = frame / FPS;
+  const pts = GRAPH.nodes.map((n, i) => {
+    const ox = Math.sin(breathe * 0.55 + i * 0.7) * (i === 0 ? 0 : 5);
+    const oy = Math.cos(breathe * 0.48 + i * 0.9) * (i === 0 ? 0 : 5);
+    return {
+      x: pose.x + (n.x + ox) * pose.s,
+      y: pose.y + (n.y + oy) * pose.s,
+      r: n.r * pose.s,
+    };
+  });
+
+  ctx.save();
+  ctx.globalAlpha *= pose.alpha;
+  ctx.lineCap = "round";
+  GRAPH.edges.forEach((e, i) => {
+    const start = -14 + (i / GRAPH.edges.length) * 72;
+    const rev = easeOutCubic(seg(frame, start, start + 26));
+    if (rev <= 0) return;
+    const a = pts[e[0]], b = pts[e[1]];
+    const len = Math.hypot(b.x - a.x, b.y - a.y);
+    ctx.strokeStyle = line + (0.55 * rev) + ")";
+    ctx.lineWidth = (e[0] === 0 ? 1.7 : 1.15) * pose.s;
+    ctx.setLineDash([len, len]);
+    ctx.lineDashOffset = len * (1 - rev);
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.stroke();
+  });
+  ctx.setLineDash([]);
+
+  pts.forEach((p, i) => {
+    const start = i === 0 ? -24 : 2 + (i / pts.length) * 64;
+    const rev = easeOutBack(seg(frame, start, start + 18));
+    if (rev <= 0) return;
+    const r = Math.max(0.4, p.r * rev);
+    if (i === 0) {
+      ctx.fillStyle = onBlue ? "#FFFFFF" : BLUE;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r * 1.15, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = onBlue ? BLUE : "#FFFFFF";
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r * 0.42, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.fillStyle = node;
+      ctx.globalAlpha *= 1;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+
+  if (frame > 86 && pose.alpha > 0.35) {
+    const signals = [0, 3, 7, 11, 16];
+    signals.forEach((ei, k) => {
+      const e = GRAPH.edges[ei % GRAPH.edges.length];
+      const t = (frame * 0.012 + k * 0.19) % 1;
+      const a = pts[e[0]], b = pts[e[1]];
+      ctx.fillStyle = onPaper ? BLUE : "#FFFFFF";
+      ctx.beginPath();
+      ctx.arc(lerp(a.x, b.x, t), lerp(a.y, b.y, t), 2.4 * pose.s, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+  ctx.restore();
+}
+
+function drawVignette(ctx, frame) {
+  const paper = paperAmt(frame);
+  const blue = blueAmt(frame);
+  const strength = (1 - paper * 0.8) * (1 - blue * 0.75);
+  if (strength < 0.05) return;
+  const g = ctx.createRadialGradient(540, 620, 300, 540, 700, 980);
+  g.addColorStop(0, "rgba(0,0,0,0)");
+  g.addColorStop(1, `rgba(0,0,0,${0.42 * strength})`);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+}
+
+function drawRule(ctx, x, y, w, t, color, width = 4) {
+  if (t <= 0 || w <= 0) return;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + w * t, y);
+  ctx.stroke();
+}
+
+function drawOpen(ctx, frame) {
+  withEnter(ctx, frame, SCENE.open, () => {
+    eyebrow(ctx, "LINKEDIN", 84, 900, ICE);
+    drawText(ctx, "The world's largest", 84, 990, { size: 68, weight: 700, color: "#FFFFFF", tracking: -1.3 });
+    const w = drawText(ctx, "professional network.", 84, 1072, { size: 68, weight: 700, color: "#FFFFFF", tracking: -1.3 });
+    const ruleT = easeOutCubic(seg(frame, 40, 68));
+    drawRule(ctx, 84, 1128, Math.min(w, 640), ruleT, BLUE, 5);
+  });
+}
+
+function drawName(ctx, frame) {
+  withEnter(ctx, frame, SCENE.name, () => {
+    eyebrow(ctx, "THE MISSION", 84, 760, ICE);
+    const w = drawText(ctx, "LinkedIn", 84, 880, { size: 112, weight: 700, color: "#FFFFFF", tracking: -2.4 });
+    const ruleT = easeOutCubic(seg(frame, SCENE.name.in[0] + 10, SCENE.name.in[0] + 36));
+    drawRule(ctx, 84, 960, w, ruleT, BLUE, 5);
+    drawText(ctx, "Connect the world's", 84, 1040, { size: 40, weight: 500, color: ICE });
+    drawText(ctx, "professionals.", 84, 1096, { size: 40, weight: 500, color: ICE });
+  });
+}
+
+const MILESTONES = [
+  ["2002", "Founded"],
+  ["2003", "Launch"],
+  ["2011", "IPO"],
+  ["2016", "$26.2B"],
+  ["2023", "1 billion"],
+  ["2026", "1.3B"],
+];
+
+function drawOrigin(ctx, frame) {
+  withEnter(ctx, frame, SCENE.origin, () => {
+    eyebrow(ctx, "ORIGIN", 84, 168, BLUE);
+    drawText(ctx, "10 December 2002", 84, 268, { size: 64, weight: 700, color: INK, tracking: -1.2 });
+    drawText(ctx, "Mountain View, California", 84, 348, { size: 32, weight: 500, color: INK });
+    drawText(ctx, "Public launch  ·  5 May 2003", 84, 408, { size: 26, weight: 500, color: MUTED });
+
+    const x0 = 96, x1 = 984, y = 560;
+    const n = MILESTONES.length;
+    const play = easeInOutCubic(seg(frame, 292, 356));
+    const px = lerp(x0, x1, play);
+    ctx.strokeStyle = "rgba(10,102,194,0.22)";
+    ctx.lineWidth = 3;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(x0, y);
+    ctx.lineTo(x1, y);
+    ctx.stroke();
+    ctx.strokeStyle = BLUE;
+    ctx.beginPath();
+    ctx.moveTo(x0, y);
+    ctx.lineTo(px, y);
+    ctx.stroke();
+
+    MILESTONES.forEach((m, i) => {
+      const x = lerp(x0, x1, i / (n - 1));
+      const on = px >= x - 6;
+      ctx.fillStyle = on ? BLUE : "rgba(10,102,194,0.28)";
+      ctx.beginPath();
+      ctx.arc(x, y, on ? 7 : 5, 0, Math.PI * 2);
+      ctx.fill();
+      drawText(ctx, m[0], x, y + 48, {
+        size: 20, weight: 700, color: on ? INK : "#A39E96", align: "center",
+      });
+      drawText(ctx, m[1], x, y + 80, {
+        size: 16, weight: 500, color: on ? BLUE : "#A39E96", align: "center",
+      });
+    });
+    ctx.fillStyle = "#FFFFFF";
+    ctx.beginPath();
+    ctx.arc(px, y, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    eyebrow(ctx, "FOUNDING TEAM", 84, 820, BLUE);
+    drawText(ctx, "Reid Hoffman", 84, 900, { size: 40, weight: 700, color: INK });
+    drawText(ctx, "Eric Ly   ·   Allen Blue", 84, 968, { size: 30, weight: 500, color: INK });
+    drawText(ctx, "Konstantin Guericke   ·   Jean-Luc Vaillant", 84, 1024, { size: 30, weight: 500, color: INK });
+    drawText(ctx, "Launched from Mountain View. Now headquartered in Sunnyvale.", 84, 1148, {
+      size: 22, weight: 500, color: MUTED,
+    });
+  });
+}
+
+function memberState(frame) {
+  const t = seg(frame, 418, 520);
+  if (t < 0.42) return { v: easeOutCubic(t / 0.42), phase: "rise" };
+  if (t < 0.64) return { v: 1, phase: "hold" };
+  return { v: 1 + 0.3 * easeOutCubic((t - 0.64) / 0.36), phase: "final" };
+}
+
+function drawScale(ctx, frame) {
+  withEnter(ctx, frame, SCENE.scale, () => {
+    eyebrow(ctx, "MEMBERSHIP", 84, 250, ICE);
+    const band = ctx.createLinearGradient(0, 400, 0, 900);
+    band.addColorStop(0, "rgba(8,16,28,0)");
+    band.addColorStop(0.22, "rgba(8,16,28,0.88)");
+    band.addColorStop(0.78, "rgba(8,16,28,0.88)");
+    band.addColorStop(1, "rgba(8,16,28,0)");
+    ctx.fillStyle = band;
+    ctx.fillRect(0, 400, W, 500);
+
+    const state = memberState(frame);
+    const num = state.v.toFixed(1);
+    const popAt = state.phase === "hold" ? 1 + 0.028 * Math.sin(seg(frame, 458, 474) * Math.PI) : 1;
+    ctx.save();
+    ctx.translate(W / 2, 600);
+    ctx.scale(popAt, popAt);
+    ctx.translate(-W / 2, -600);
+    ctx.font = "700 208px Inter, sans-serif";
+    const wN = ctx.measureText(num).width;
+    ctx.font = "700 78px Inter, sans-serif";
+    const wB = ctx.measureText("B").width;
+    const total = wN + 12 + wB;
+    const x = (W - total) / 2;
+    const base = 650;
+    ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = "#FFFFFF";
+    ctx.font = "700 208px Inter, sans-serif";
+    ctx.fillText(num, x, base);
+    ctx.fillStyle = "#6AADF0";
+    ctx.font = "700 78px Inter, sans-serif";
+    ctx.fillText("B", x + wN + 12, base - 108);
+    ctx.restore();
+
+    const hold = seg(frame, 456, 472) * (1 - seg(frame, 482, 498));
+    const after = seg(frame, 486, 506);
+    drawText(ctx, "1 billion  ·  November 2023", W / 2, 730, {
+      size: 30, weight: 500, color: ICE, align: "center", alpha: hold * (1 - after),
+    });
+    drawText(ctx, "1.3 billion members", W / 2, 730, {
+      size: 34, weight: 600, color: "#FFFFFF", align: "center", alpha: after,
+    });
+    const countries = easeOutCubic(seg(frame, 500, 522));
+    drawText(ctx, "200+ countries and territories", W / 2, 820, {
+      size: 26, weight: 500, color: MUTED_DARK, align: "center", alpha: countries,
+    });
+
+    const facts = [
+      ["5 years", "double-digit growth"],
+      ["36", "languages"],
+      ["~100%", "of the Fortune 500"],
+    ];
+    facts.forEach((f, i) => {
+      const a = easeOutCubic(seg(frame, 486 + i * 10, 508 + i * 10));
+      const x = 180 + i * 280;
+      drawText(ctx, f[0], x, 1040, { size: 36, weight: 700, color: "#FFFFFF", align: "center", alpha: a });
+      drawText(ctx, f[1], x, 1092, { size: 18, weight: 500, color: MUTED_DARK, align: "center", alpha: a });
+    });
+  });
+}
+
+const MINUTE = [
+  ["18,000+", "connections are made"],
+  ["~8,200", "job applications sent"],
+  ["93", "people add a new role"],
+  ["123", "hours of learning watched"],
+  ["1.8M+", "feed updates viewed"],
+];
+
+function drawMinute(ctx, frame) {
+  withEnter(ctx, frame, SCENE.minute, () => {
+    eyebrow(ctx, "EVERY MINUTE", 84, 168, ICE);
+    const spin = seg(frame, SCENE.minute.in[0], SCENE.minute.out[0]);
+    const cx = 960, cy = 168, rad = 28;
+    ctx.strokeStyle = "rgba(255,255,255,0.2)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.strokeStyle = BLUE;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(cx, cy, rad, -Math.PI / 2, -Math.PI / 2 + spin * Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = "#FFFFFF";
+    ctx.beginPath();
+    ctx.arc(cx + Math.cos(-Math.PI / 2 + spin * Math.PI * 2) * rad, cy + Math.sin(-Math.PI / 2 + spin * Math.PI * 2) * rad, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    MINUTE.forEach((row, i) => {
+      const a = easeOutCubic(seg(frame, 566 + i * 18, 586 + i * 18));
+      if (a <= 0) return;
+      const y = 300 + i * 148;
+      const dx = (1 - a) * 36;
+      ctx.save();
+      ctx.globalAlpha *= a;
+      ctx.translate(dx, 0);
+      ctx.fillStyle = BLUE;
+      roundRect(ctx, 84, y - 36, 6, 78, 3);
+      ctx.fill();
+      drawText(ctx, row[0], 116, y - 8, { size: 54, weight: 700, color: "#FFFFFF", tracking: -1 });
+      drawText(ctx, row[1], 116, y + 40, { size: 26, weight: 500, color: MUTED_DARK });
+      ctx.restore();
+    });
+    drawText(ctx, "Feed   ·   Jobs   ·   Messaging   ·   Learning", 84, 1188, {
+      size: 22, weight: 500, color: MUTED_DARK,
+      alpha: easeOutCubic(seg(frame, 660, 684)),
+    });
+  });
+}
+
+const REGIONS = [
+  ["Europe, Middle East & Africa", "430M+"],
+  ["Asia Pacific", "410M+"],
+  ["North America", "290M+"],
+  ["South & Central America", "226M+"],
+];
+const REGION_VAL = [430, 410, 290, 226];
+
+function drawMap(ctx, frame) {
+  withEnter(ctx, frame, SCENE.map, () => {
+    eyebrow(ctx, "THE ECONOMIC GRAPH", 84, 156, ICE);
+    drawText(ctx, "Members across the workforce", 84, 214, { size: 32, weight: 500, color: "#FFFFFF" });
+
+    const maxV = 430;
+    REGIONS.forEach((row, i) => {
+      const a = easeOutCubic(seg(frame, 748 + i * 12, 772 + i * 12));
+      if (a <= 0) return;
+      const y = 330 + i * 155;
+      ctx.save();
+      ctx.globalAlpha *= a;
+      drawText(ctx, row[0], 84, y, { size: 26, weight: 600, color: "#FFFFFF" });
+      drawText(ctx, row[1], 996, y, { size: 26, weight: 700, color: ICE, align: "right" });
+      const trackY = y + 36;
+      ctx.fillStyle = "rgba(255,255,255,0.10)";
+      roundRect(ctx, 84, trackY, 912, 14, 7);
+      ctx.fill();
+      const grow = easeOutCubic(seg(frame, 752 + i * 12, 792 + i * 12));
+      const bw = 912 * (REGION_VAL[i] / maxV) * grow;
+      if (bw > 1) {
+        const grd = ctx.createLinearGradient(84, 0, 84 + bw, 0);
+        grd.addColorStop(0, "#084E96");
+        grd.addColorStop(1, "#3D95E8");
+        ctx.fillStyle = grd;
+        roundRect(ctx, 84, trackY, bw, 14, 7);
+        ctx.fill();
+      }
+      ctx.restore();
+    });
+
+    const fa = easeOutCubic(seg(frame, 800, 822));
+    drawText(ctx, "$19.8B", 84, 1048, { size: 48, weight: 700, color: "#FFFFFF", alpha: fa, tracking: -1 });
+    drawText(ctx, "annual revenue", 84, 1104, { size: 24, weight: 500, color: MUTED_DARK, alpha: fa });
+    drawText(ctx, "42,000+ skills", 620, 1040, { size: 28, weight: 600, color: "#FFFFFF", alpha: fa });
+    drawText(ctx, "144,000+ schools", 620, 1088, { size: 28, weight: 600, color: "#FFFFFF", alpha: fa });
+  });
+}
+
+function drawVision(ctx, frame) {
+  withEnter(ctx, frame, SCENE.vision, () => {
+    eyebrow(ctx, "THE VISION", 84, 430, "rgba(255,255,255,0.82)");
+    const lines = [
+      "Economic opportunity",
+      "for every member",
+      "of the global workforce.",
+    ];
+    lines.forEach((line, i) => {
+      const a = easeOutCubic(seg(frame, 886 + i * 10, 908 + i * 10));
+      const dy = (1 - a) * 24;
+      ctx.save();
+      ctx.globalAlpha *= a;
+      ctx.translate(0, dy);
+      drawText(ctx, line, 84, 560 + i * 92, {
+        size: 60, weight: 700, color: "#FFFFFF", tracking: -1.1,
+      });
+      ctx.restore();
+    });
+  });
+}
+
+function drawEnd(ctx, frame) {
+  withEnter(ctx, frame, SCENE.end, () => {
+    const pose = graphPose(frame);
+    const grd = ctx.createRadialGradient(540, 690, 40, 540, 700, 420);
+    grd.addColorStop(0, "rgba(8,16,28,0.78)");
+    grd.addColorStop(1, "rgba(8,16,28,0)");
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, W, H);
+
+    const ruleT = easeOutCubic(seg(frame, 1024, 1050));
+    drawText(ctx, "LinkedIn", W / 2, 690, {
+      size: 96, weight: 700, color: "#FFFFFF", align: "center", tracking: -2.2,
+    });
+    drawRule(ctx, 390, 758, 300, ruleT, BLUE, 5);
+    drawText(ctx, "linkedin.com", W / 2, 820, {
+      size: 32, weight: 500, color: ICE, align: "center",
+      alpha: easeOutCubic(seg(frame, 1036, 1056)),
+    });
+    drawText(ctx, "Sunnyvale", W / 2, 1088, {
+      size: 26, weight: 600, color: "#FFFFFF", align: "center",
+      alpha: easeOutCubic(seg(frame, 1044, 1064)),
+    });
+    drawText(ctx, "17,000+ people   ·   Microsoft since 2016", W / 2, 1140, {
+      size: 22, weight: 500, color: MUTED_DARK, align: "center",
+      alpha: easeOutCubic(seg(frame, 1050, 1070)),
+    });
+    void pose;
+  });
+}
+
+function renderFrame(frame) {
+  const canvas = document.getElementById("c");
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  ctx.imageSmoothingQuality = "high";
+  drawBackground(ctx, frame);
+  drawGraph(ctx, frame);
+  drawVignette(ctx, frame);
+  drawOpen(ctx, frame);
+  drawName(ctx, frame);
+  drawOrigin(ctx, frame);
+  drawScale(ctx, frame);
+  drawMinute(ctx, frame);
+  drawMap(ctx, frame);
+  drawVision(ctx, frame);
+  drawEnd(ctx, frame);
+}
+
+window.renderFrame = renderFrame;
+window.FRAMES = FRAMES;
+
+const params = new URLSearchParams(location.search);
+if (params.has("f")) {
+  document.fonts.ready.then(() => renderFrame(Number(params.get("f")) || 0));
+} else if (params.has("play")) {
+  document.fonts.ready.then(() => {
+    const t0 = performance.now();
+    const loop = (now) => {
+      const f = Math.min(FRAMES - 1, Math.floor(((now - t0) / 1000) * FPS));
+      renderFrame(f);
+      if (f < FRAMES - 1) requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  });
+}
+</script>
+</body>
+</html>

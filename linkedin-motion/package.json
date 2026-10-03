@@ -1,0 +1,14 @@
+{
+  "name": "linkedin-motion",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "frames": "node render.mjs",
+    "audio": "python3 audio.py",
+    "assemble": "bash assemble.sh",
+    "build": "node render.mjs && python3 audio.py && bash assemble.sh"
+  },
+  "dependencies": {
+    "puppeteer-core": "^24.15.0"
+  }
+}
